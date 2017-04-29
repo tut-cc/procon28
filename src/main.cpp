@@ -1,9 +1,12 @@
 #include <iostream>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include "imagawa.hpp"
 
 int main()
 {
+  im::hello();
+
   std::string str;
   std::cin >> str;
   cv::Mat img = cv::imread(str, 1);
