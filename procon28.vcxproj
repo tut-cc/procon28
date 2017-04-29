@@ -145,6 +145,14 @@
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="lib\imagawa\imagawa.vcxproj">
+      <Project>{453d1063-c203-4a83-a95d-3afffcc0a828}</Project>
+    </ProjectReference>
+    <ProjectReference Include="lib\tokugawa\tokugawa.vcxproj">
+      <Project>{5f1e5fb5-966b-4a33-877d-a9beee01e1fb}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -2,10 +2,12 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include "imagawa.hpp"
+#include "tokugawa.hpp"
 
 int main()
 {
   im::hello();
+  tk::hello();
 
   std::string str;
   std::cin >> str;
