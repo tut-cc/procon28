@@ -7,4 +7,8 @@ set(CMAKE_CXX_FLAGS "-std=c++11 -O2")
 set(CMAKE_CXX_FLAGS_DEBUG, "-Wall")
 set(CMAKE_BUILD_TYPE Release)
 
+if (UNIX)
+add_subdirectory( lib/imagawa )
+add_subdirectory( lib/tokugawa )
+endif (UNIX)
 add_subdirectory( src )

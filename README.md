@@ -27,3 +27,18 @@ mkdir build
 cd build
 cmake ..
 ```
+
+### Linux
+cmakeとmake、OpenCVを入れておいてください。
+ディストリごとにコマンドが異なりますが、パッケージ名は大体そのままだと思います。
+
+以下のコマンドを実行してください。
+```sh
+mkdir include
+cp lib/imagawa/*.hpp include
+cp lib/tokugawa/*.hpp include
+mkdir build
+cd build
+cmake ..
+make
+```
