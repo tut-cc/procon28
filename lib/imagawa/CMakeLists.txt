@@ -11,3 +11,4 @@ target_link_libraries(imagawa ${OPENCV_LIBS})
 
 install(TARGETS imagawa ARCHIVE DESTINATION ${CMAKE_SOURCE_DIR}/lib)
 install(FILES imagawa.hpp DESTINATION ${CMAKE_SOURCE_DIR}/include)
+configure_file(imagawa.hpp ${CMAKE_SOURCE_DIR}/include)

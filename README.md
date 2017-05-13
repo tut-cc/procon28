@@ -34,9 +34,6 @@ cmakeとmake、OpenCVを入れておいてください。
 
 以下のコマンドを実行してください。
 ```sh
-mkdir include
-cp lib/imagawa/*.hpp include
-cp lib/tokugawa/*.hpp include
 mkdir build
 cd build
 cmake ..
