@@ -25,7 +25,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Source.def">
+    <None Include="tokugawa.def">
       <Filter>ソース ファイル</Filter>
     </None>
   </ItemGroup>
