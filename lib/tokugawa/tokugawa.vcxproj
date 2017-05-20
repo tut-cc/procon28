@@ -145,9 +145,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="matsuri\matsuri.hpp" />
     <ClInclude Include="tokugawa.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="matsuri\matsuri.cpp" />
     <ClCompile Include="tokugawa.cpp" />
   </ItemGroup>
   <ItemGroup>
