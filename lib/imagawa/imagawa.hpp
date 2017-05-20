@@ -3,8 +3,21 @@
 #include <vector>
 
 namespace im {
-  class Point {};
-  class Segment {};
+  // ‚Æ‚è‚ ‚¦‚¸‘S•”public
+  class Point {
+  public:
+    Point();
+    Point(int x, int y);
+
+    int x, y;
+  };
+
+  class Segment {
+  public:
+    Segment(const Point &p1, const Point &p2);
+
+    Point p1, p2;
+  };
 
   void hello();
 
