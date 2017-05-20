@@ -67,5 +67,5 @@ std::vector<cv::Vec4i> im::detectSegments(const cv::Mat &binaryImg) {
 }
 
 std::vector<im::Point> im::detectVertexes(const std::vector<cv::Vec4i> &segments) {
-
+  return {};
 }

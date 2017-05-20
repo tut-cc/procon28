@@ -5,7 +5,8 @@
 
 namespace cv {
   class Mat;
-  class Vec4i;
+  template<typename _Tp, int cn> class Vec;
+  typedef Vec<int, 4> Vec4i;
 }
 
 namespace im {
