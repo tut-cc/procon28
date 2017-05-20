@@ -40,6 +40,7 @@ namespace im {
 
   void hello();
 
+  std::vector<cv::Mat> devideImg(const cv::Mat &binaryImg);
   std::vector<cv::Vec4i> detectSegments(const cv::Mat &binaryImg);
   std::vector<Point> detectVertexes(const std::vector<cv::Vec4i> &segments);
 }
