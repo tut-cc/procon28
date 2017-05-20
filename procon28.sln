@@ -13,6 +13,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tokugawa", "lib\tokugawa\to
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "imagawa", "lib\imagawa\imagawa.vcxproj", "{453D1063-C203-4A83-A95D-3AFFFCC0A828}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tokugawaTester", "lib\tokugawa\tokugawaTester\tokugawaTester.vcxproj", "{513B9AFA-8B46-4B1D-AB5B-7348F36D8DAD}"
+	ProjectSection(ProjectDependencies) = postProject
+		{5F1E5FB5-966B-4A33-877D-A9BEEE01E1FB} = {5F1E5FB5-966B-4A33-877D-A9BEEE01E1FB}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -45,6 +50,14 @@ Global
 		{453D1063-C203-4A83-A95D-3AFFFCC0A828}.Release|x64.Build.0 = Release|x64
 		{453D1063-C203-4A83-A95D-3AFFFCC0A828}.Release|x86.ActiveCfg = Release|Win32
 		{453D1063-C203-4A83-A95D-3AFFFCC0A828}.Release|x86.Build.0 = Release|Win32
+		{513B9AFA-8B46-4B1D-AB5B-7348F36D8DAD}.Debug|x64.ActiveCfg = Debug|x64
+		{513B9AFA-8B46-4B1D-AB5B-7348F36D8DAD}.Debug|x64.Build.0 = Debug|x64
+		{513B9AFA-8B46-4B1D-AB5B-7348F36D8DAD}.Debug|x86.ActiveCfg = Debug|Win32
+		{513B9AFA-8B46-4B1D-AB5B-7348F36D8DAD}.Debug|x86.Build.0 = Debug|Win32
+		{513B9AFA-8B46-4B1D-AB5B-7348F36D8DAD}.Release|x64.ActiveCfg = Release|x64
+		{513B9AFA-8B46-4B1D-AB5B-7348F36D8DAD}.Release|x64.Build.0 = Release|x64
+		{513B9AFA-8B46-4B1D-AB5B-7348F36D8DAD}.Release|x86.ActiveCfg = Release|Win32
+		{513B9AFA-8B46-4B1D-AB5B-7348F36D8DAD}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
