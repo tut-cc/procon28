@@ -1,22 +1,18 @@
 #include "imagawa.hpp"
 #include <iostream>
 
-im::Point::Point() : Point(0, 0) {
+im::Point::Point() : Point(0, 0) {}
 
-}
-
-im::Point::Point(int x_, int y_) : x(x_), y(y_) {}
-
-im::Segment::Segment(const im::Point &p1_, const im::Point &p2_) : p1(p1_), p2(p2_) {}
+im::Point::Point(int xx, int yy) : x(xx), y(yy) {}
 
 void im::hello() {
   std::cout << "hello 今川" << std::endl;
 }
 
-std::vector<im::Segment> im::detectSegments() {
+std::vector<std::pair<im::Point, im::Point>> im::detectSegments(const cv::Mat &img) {
 
 }
 
-std::vector<im::Point> im::detectVertexes() {
+std::vector<im::Point> im::detectVertexes(const std::vector<std::pair<Point, Point>> &segments) {
 
 }
