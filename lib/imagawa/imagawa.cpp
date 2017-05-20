@@ -13,8 +13,8 @@ im::Point::Point(int x_, int y_) : x(x_), y(y_) {}
 
 im::Piece::Piece() : Piece(0, {}, {}, {}) {}
 
-im::Piece::Piece(int id_, const std::vector<im::Point> &vertexes_, const std::vector<double> &edges_,
-  const std::vector<double> &degs_) : id(id_), vertexes(vertexes_), edges(edges_), degs(degs_) {}
+im::Piece::Piece(int id_, const std::vector<im::Point> &vertexes_, const std::vector<int> &edges2_,
+  const std::vector<double> &degs_) : id(id_), vertexes(vertexes_), edges2(edges2_), degs(degs_) {}
 
 im::Answer::Answer() : Answer(0, {}) {}
 
