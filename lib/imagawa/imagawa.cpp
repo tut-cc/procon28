@@ -15,7 +15,9 @@ void im::hello() {
 }
 
 std::vector<cv::Vec4i> im::detectSegments(const cv::Mat &binaryImg) {
-
+  std::vector<cv::Vec4i> segments;
+  auto lsd = cv::createLineSegmentDetector();
+  lsd->detect(binaryImg, segments);
 }
 
 std::vector<Point> im::detectVertexes(const std::vector<cv::Vec4i> &segments) {
