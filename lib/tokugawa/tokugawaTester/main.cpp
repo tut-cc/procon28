@@ -1,6 +1,8 @@
 #include "tokugawa.hpp"
 
-void main()
+int main()
 {
   tk::hello();
+
+  return 0;
 }
