@@ -27,6 +27,8 @@ void im::hello() {
 }
 
 std::vector<cv::Mat> im::devideImg(const cv::Mat &binaryImg) {
+
+  // ラべリング
   cv::Mat labels, stats, centroids;
   auto labelNum = cv::connectedComponentsWithStats(binaryImg, labels, stats, centroids);
 
@@ -34,20 +36,25 @@ std::vector<cv::Mat> im::devideImg(const cv::Mat &binaryImg) {
   for (auto i = 1; i < labelNum; i++) {
     auto *stat = stats.ptr<int>(i);
 
+    // サイズは少し大きめにとる
     auto l = std::max(stat[cv::ConnectedComponentsTypes::CC_STAT_LEFT] - 5, 0);
     auto t = std::max(stat[cv::ConnectedComponentsTypes::CC_STAT_TOP] - 5, 0);
     auto w = std::min(stat[cv::ConnectedComponentsTypes::CC_STAT_WIDTH] + 10, binaryImg.cols - l);
     auto h = std::min(stat[cv::ConnectedComponentsTypes::CC_STAT_HEIGHT] + 10, binaryImg.rows - t);
     auto s = stat[cv::ConnectedComponentsTypes::CC_STAT_AREA];
 
+    // 小さすぎるクラスタはノイズと判断して無視
     if (s < 100) {
       continue;
     }
 
+    // ピース切り出し
     auto pieceImg = binaryImg(cv::Rect(l, t, w, h)).clone();
     for (auto y = 0; y < h; y++) {
       auto *labelsRow = labels.ptr<int>(t + y);
       for (auto x = 0; x < w; x++) {
+
+        // 入り込んだ別ピースは黒で塗りつぶす
         if (labelsRow[l + x] != i) {
           pieceImg.data[w * y + x] = 0;
         }
@@ -60,9 +67,62 @@ std::vector<cv::Mat> im::devideImg(const cv::Mat &binaryImg) {
   return pieceImgs;
 }
 
+static int dist2(int x1, int y1, int x2, int y2) {
+  return (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2);
+}
+
+// 暫定仕様:重なり合っている線分はマージして返す
 std::vector<cv::Vec4i> im::detectSegments(const cv::Mat &edgeImg) {
+
+  // 確率的ハフ変換による線分検出
+  std::vector<cv::Vec4i> segs;
+  cv::HoughLinesP(edgeImg, segs, 1, CV_PI / 180, 45, 30, 30);
+
   std::vector<cv::Vec4i> segments;
-  cv::HoughLinesP(edgeImg, segments, 1, CV_PI / 180, 45, 30, 30);
+  for (auto i = 0; i < segs.size(); i++) {
+
+    // 短い線分を無視
+    if (dist2(segs[i][0], segs[i][1], segs[i][2], segs[i][3]) < 400) {
+      continue;
+    }
+
+    auto slope1 = (double)(segs[i][1] - segs[i][3]) / (segs[i][0] - segs[i][2]);
+    auto merged = false;
+    for (auto j = i + 1; j < segs.size(); j++) {
+
+      // 短い線分を無視
+      if (dist2(segs[j][0], segs[j][1], segs[j][2], segs[j][3]) < 400) {
+        continue;
+      }
+
+      // 傾きに差があればマージしない
+      auto slope2 = (double)(segs[j][1] - segs[j][3]) / (segs[j][0] - segs[j][2]);
+      if (abs(slope1 - slope2) > 0.1) {
+        continue;
+      }
+
+      // TODO 線分間の距離
+      /*
+      for (auto k = 0; k < 2; k++) {
+      for (auto l = 0; l < 2; l++) {
+      if (dist2(segs[i][k * 2], segs[i][k * 2 + 1], segs[j][l * 2], segs[j][l * 2 + 1]) >= 400) {
+      continue;
+      }
+
+      merged = true;
+      segs[j][(1 - l) * 2] = segs[i][k * 2];
+      segs[j][(1 - l) * 2 + 1] = segs[i][k * 2 + 1];
+      goto PUSH;
+      }
+      }
+      */
+    }
+
+  PUSH:
+    if (!merged) {
+      segments.push_back(segs[i]);
+    }
+  }
 
   return segments;
 }
