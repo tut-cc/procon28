@@ -60,10 +60,9 @@ std::vector<cv::Mat> im::devideImg(const cv::Mat &binaryImg) {
   return pieceImgs;
 }
 
-std::vector<cv::Vec4i> im::detectSegments(const cv::Mat &binaryImg) {
+std::vector<cv::Vec4i> im::detectSegments(const cv::Mat &edgeImg) {
   std::vector<cv::Vec4i> segments;
-  auto lsd = cv::createLineSegmentDetector();
-  lsd->detect(binaryImg, segments);
+  cv::HoughLinesP(edgeImg, segments, 1, CV_PI / 180, 45, 30, 30);
 
   return segments;
 }
@@ -154,4 +153,3 @@ std::vector<im::Point> im::detectVertexes(const std::vector<cv::Vec4i> &segments
 
 	return vps;
 }
-
