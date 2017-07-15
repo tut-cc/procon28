@@ -4,9 +4,14 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/opencv.hpp>
 
-#include<vector>
+#include <vector>
 #include <algorithm>
 #include <iostream>
+#include <cmath>
+
+#define PI 3.14159265
+#define DP 180/PI
+#define derror 0.00001
 
 
 im::Point::Point() : Point(0, 0) {}
@@ -166,20 +171,20 @@ double getdis(cv::Vec4i v1, cv::Vec4i v2, im::Point vp){
   int midx1 = abs(v1[0]-v1[2])/2;*/
   double midy1 = (double)v1[1];
   double midx1 = (double)v1[0];
-  //double midy2 = (double)v1[3];
-  //double midx2 = (double)v1[2];
+  double midy2 = (double)v1[3];
+  double midx2 = (double)v1[2];
   /*pair<double, double> middle1 = make_pair(midx1, midy1);
     pair<double, double> middle2 = make_pair(midx2, midy2); */
 
   double dy1 = midy1 - vp.y;
-  //double dy2 = midy2 - vp.y;
+  double dy2 = midy2 - vp.y;
   double dx1 = midx1 - vp.x;
-  //double dx2 = midx2 - vp.x;
+  double dx2 = midx2 - vp.x;
 
   double dis1 = sqrt(dx1*dx1 + dy1*dy1);
-  //double dis2 = sqrt(dx2*dx2 + dy2*dy2);
+  double dis2 = sqrt(dx2*dx2 + dy2*dy2);
 
-  return dis1;
+  return std::min(dis1, dis2);
 }
 
 std::vector<im::Point> im::detectVertexes(const std::vector<cv::Vec4i> &segments) {
@@ -218,4 +223,66 @@ std::vector<im::Point> im::detectVertexes(const std::vector<cv::Vec4i> &segments
 	}
 
 	return vps;
+}
+
+/*
+######################################################################
+information about shape
+N:na xa1 ya1 xa2 ya2 ... xana yana:nb xb1 yb1 xb2 yb2 ...xbna ybna:...
+######################################################################
+*/
+
+//For the time being, coordinates is written by [mm]
+
+std::vector<std::vector<im::Point>> check(std::vector<im::point> shape){
+	int len_corn = shape.size();
+	std::vector<double> len_side(len_corn, 0);
+	std::vector<im::Point> tmp_res(len_corn, im::Point(0,0));
+	std::vector<std::vector<im::Point>> result;
+
+	for(int corn=0;corn<len_corn;corn++){
+		int dx = shape[corn].x 
+			- shape[(corn<len_corn-1)?corn+1:0].x;
+		int dy = shape[corn].y 
+			- shape[(corn<len_corn-1)?corn+1:0].y;
+		len_side[corn] = sqrt(dx*dx+dy*dy);
+	}
+
+	/*
+	>>terms to stop<<
+	1. Theta > 90
+	2. dx > len_side[0]
+
+	>>terms to break<<
+	1. A point isn't at any grids.
+	*/
+
+	double dy0 = shape[1].y - shape[0].y;
+	double theta0 = 0;
+	if(dy0!=0){
+		theta0 = acos(dy0/len_side[0]);
+		//cout << len_side[0] << endl;
+	}else{
+		theta0 = 0;
+ 	}
+	double theta = 0, dtheta = 0;
+	for(double dx=(int)-len_side[0];dx<len_side[0] && dtheta <= PI*2;dx++){
+		(dx!=0) ? theta = asin(dx/len_side[0]) : theta = 0;
+		dtheta = theta0 - theta;
+		cout << theta0*DP << ":" << theta*DP << ":" << dtheta*DP << endl;
+		for(int corn=0;corn<len_corn;corn++){
+			//Rotation matrix
+			double x = 
+				(shape[corn].x-shape[0].x)*cos(dtheta) -
+				(shape[corn].y-shape[0].y)*sin(dtheta);
+			double y = 
+				(shape[corn].x-shape[0].x)*sin(dtheta) +
+				(shape[corn].y-shape[0].y)*cos(dtheta);
+			if(abs(floor(x)-x)>derror || abs(floor(y)-y)>derror) break;
+			tmp_res[corn] = im::Point(x,y);
+			if(corn == len_corn-1) result.push_back(tmp_res); 
+		}
+	}
+
+	return result;
 }

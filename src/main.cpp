@@ -35,11 +35,13 @@ int main()
 			//端っこ表示
 			/*
       cv::circle(pieceImg, cv::Point(segment[0], segment[1]), 5, cv::Scalar(255, 255, 255), -1, 8, 0);
-      cv::circle(pieceImg, cv::Point(segment[2], segment[3]), 5, cv::Scalar(255, 255, 255), -1, 8, 0);
+      cv::circle(pieceImg, cv::Point(segment[2], segment[3]), 5, cv::Scalar(255, 255, 255), -1, 8, 0);*/
       cv::line(pieceImg, cv::Point(segment[0], segment[1]),
-        cv::Point(segment[2], segment[3]), cv::Scalar(color_i, color_i, 255), 2, 8); */
+        cv::Point(segment[2], segment[3]), cv::Scalar(color_i, color_i, 255), 2, 8); 
 			color_i += 20;
     }
+
+		color_i = 0;
 
     for (auto &vertex : vertexes) {
 			if(vertex.x == -1) continue;
