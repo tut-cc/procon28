@@ -224,7 +224,6 @@ std::vector<im::Point> im::detectVertexes(const std::vector<cv::Vec4i> &segments
 
 	return vps;
 }
-
 /*
 ######################################################################
 information about shape
@@ -234,7 +233,8 @@ N:na xa1 ya1 xa2 ya2 ... xana yana:nb xb1 yb1 xb2 yb2 ...xbna ybna:...
 
 //For the time being, coordinates is written by [mm]
 
-std::vector<std::vector<im::Point>> check(std::vector<im::point> shape){
+
+std::vector<std::vector<im::Point>> check(std::vector<im::Point> shape){
 	int len_corn = shape.size();
 	std::vector<double> len_side(len_corn, 0);
 	std::vector<im::Point> tmp_res(len_corn, im::Point(0,0));
@@ -264,12 +264,13 @@ std::vector<std::vector<im::Point>> check(std::vector<im::point> shape){
 		//cout << len_side[0] << endl;
 	}else{
 		theta0 = 0;
- 	}
+	}
 	double theta = 0, dtheta = 0;
-	for(double dx=(int)-len_side[0];dx<len_side[0] && dtheta <= PI*2;dx++){
-		(dx!=0) ? theta = asin(dx/len_side[0]) : theta = 0;
+	for(double dy=(int)len_side[0];dy<len_side[0] && theta <= PI/4;dy--){
+		//(dx!=0) ? theta = asin(dx/len_side[0]) : theta = 0;
+		theta = acos(dy/len_side[0]);
 		dtheta = theta0 - theta;
-		cout << theta0*DP << ":" << theta*DP << ":" << dtheta*DP << endl;
+		//cout << theta0*DP << ":" << theta*DP << ":" << dtheta*DP << endl;
 		for(int corn=0;corn<len_corn;corn++){
 			//Rotation matrix
 			double x = 
@@ -278,9 +279,20 @@ std::vector<std::vector<im::Point>> check(std::vector<im::point> shape){
 			double y = 
 				(shape[corn].x-shape[0].x)*sin(dtheta) +
 				(shape[corn].y-shape[0].y)*cos(dtheta);
-			if(abs(floor(x)-x)>derror || abs(floor(y)-y)>derror) break;
-			tmp_res[corn] = im::Point(x,y);
-			if(corn == len_corn-1) result.push_back(tmp_res); 
+			/*cout << x << "," << y << endl;
+			cout << ceil(x) << "," << ceil(y) << endl;
+			cout << floor(x) << "," << floor(y) << endl;*/
+			bool flagx = false;
+			bool flagy = false;
+			if(abs(floor(x)-x)<derror){	x = floor(x); flagx = true; }
+			if(abs(floor(y)-y)<derror){ y = floor(y); flagy = true; }
+			if(abs(ceil(x)-x)<derror){ x = ceil(x); flagx = true; }
+			if(abs(ceil(y)-y)<derror){ y = ceil(y); flagy = true; }
+			if(flagx && flagy) tmp_res[corn] = p(x,y);
+
+			if(corn == len_corn-1){
+				result.push_back(tmp_res); 
+			}
 		}
 	}
 
