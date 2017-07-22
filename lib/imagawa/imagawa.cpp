@@ -234,7 +234,7 @@ N:na xa1 ya1 xa2 ya2 ... xana yana:nb xb1 yb1 xb2 yb2 ...xbna ybna:...
 //For the time being, coordinates is written by [mm]
 
 
-std::vector<std::vector<im::Point>> check(std::vector<im::Point> shape){
+std::vector<std::vector<im::Point>> roll(std::vector<im::Point> shape){
 	int len_corn = shape.size();
 	std::vector<double> len_side(len_corn, 0);
 	std::vector<im::Point> tmp_res(len_corn, im::Point(0,0));
@@ -289,6 +289,7 @@ std::vector<std::vector<im::Point>> check(std::vector<im::Point> shape){
 			if(abs(ceil(x)-x)<derror){ x = ceil(x); flagx = true; }
 			if(abs(ceil(y)-y)<derror){ y = ceil(y); flagy = true; }
 			if(flagx && flagy) tmp_res[corn] = p(x,y);
+			else break;
 
 			if(corn == len_corn-1){
 				result.push_back(tmp_res); 
