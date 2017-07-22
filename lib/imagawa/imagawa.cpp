@@ -266,7 +266,7 @@ std::vector<std::vector<im::Point>> roll(std::vector<im::Point> shape){
 		theta0 = 0;
 	}
 	double theta = 0, dtheta = 0;
-	for(double dy=(int)len_side[0];dy<len_side[0] && theta <= PI/4;dy--){
+	for(double dy=(int)len_side[0];dy<=len_side[0] && theta <= PI/4;dy--){
 		//(dx!=0) ? theta = asin(dx/len_side[0]) : theta = 0;
 		theta = acos(dy/len_side[0]);
 		dtheta = theta0 - theta;
