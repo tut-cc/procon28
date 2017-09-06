@@ -235,6 +235,13 @@ N:na xa1 ya1 xa2 ya2 ... xana yana:nb xb1 yb1 xb2 yb2 ...xbna ybna:...
 
 
 std::vector<std::vector<im::Point>> roll(std::vector<im::Point> shape){
+	//Transfer [pix -> mm]
+	double ratio = 55/512; //[mm/pix]
+	for(auto &xy : shape){
+		xy -> x *= ratio;
+		xy -> y *= ratio;
+	}
+
 	int len_corn = shape.size();
 	std::vector<double> len_side(len_corn, 0);
 	std::vector<im::Point> tmp_res(len_corn, im::Point(0,0));
