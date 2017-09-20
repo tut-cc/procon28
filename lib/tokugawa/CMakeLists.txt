@@ -6,7 +6,7 @@ set(CMAKE_BUILD_TYPE Release)
 # set(serial "1.0.0")
 # set(soserial "1")
 
-add_library(tokugawa STATIC tokugawa.cpp)
+add_library(tokugawa STATIC tokugawa.cpp matsuri/matsuri.cpp)
 target_link_libraries(tokugawa ${OPENCV_LIBS})
 
 install(TARGETS tokugawa ARCHIVE DESTINATION ${CMAKE_SOURCE_DIR}/lib)
