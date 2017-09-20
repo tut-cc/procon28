@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <sstream>
 
-void tk::hello()
+void tk::tk_hello()
 {
   std::cout << "hello 徳川" << std::endl;
 }

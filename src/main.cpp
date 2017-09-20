@@ -9,7 +9,7 @@
 int main()
 {
   im::hello();
-  tk::hello();
+  tk::tk_hello();
 
   std::string str;
   std::cin >> str;

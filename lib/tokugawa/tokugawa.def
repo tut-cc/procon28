@@ -1,5 +1,5 @@
 LIBRARY
 
 EXPORTS
-	hello
+	tk_hello
 	search

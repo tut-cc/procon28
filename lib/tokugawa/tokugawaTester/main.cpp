@@ -2,7 +2,7 @@
 
 int main()
 {
-  tk::hello();
+  tk::tk_hello();
 
   std::vector<std::vector<im::Piece>> problem;
 
