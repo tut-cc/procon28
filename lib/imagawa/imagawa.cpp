@@ -238,8 +238,8 @@ std::vector<std::vector<im::Point>> roll(std::vector<im::Point> shape){
 	//Transfer [pix -> mm]
 	double ratio = 55/512; //[mm/pix]
 	for(auto &xy : shape){
-		xy -> x *= ratio;
-		xy -> y *= ratio;
+		xy . x *= ratio;
+		xy . y *= ratio;
 	}
 
 	int len_corn = shape.size();
@@ -295,7 +295,7 @@ std::vector<std::vector<im::Point>> roll(std::vector<im::Point> shape){
 			if(abs(floor(y)-y)<derror){ y = floor(y); flagy = true; }
 			if(abs(ceil(x)-x)<derror){ x = ceil(x); flagx = true; }
 			if(abs(ceil(y)-y)<derror){ y = ceil(y); flagy = true; }
-			if(flagx && flagy) tmp_res[corn] = p(x,y);
+			if(flagx && flagy) tmp_res[corn] = im::Point(x,y);
 			else break;
 
 			if(corn == len_corn-1){
