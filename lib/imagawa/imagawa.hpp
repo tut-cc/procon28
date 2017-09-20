@@ -5,7 +5,8 @@
 
 namespace cv {
   class Mat;
-  class Vec4i;
+  template<typename _Tp, int cn> class Vec;
+  typedef Vec<int, 4> Vec4i;
 }
 
 namespace im {
@@ -21,12 +22,12 @@ namespace im {
   public:
     Piece();
     Piece(int id, const std::vector<Point> &vertexes,
-      const std::vector<double> &edges, const std::vector<double> &degs);
+      const std::vector<int> &edges2, const std::vector<double> &degs);
 
     int id;
     std::vector<Point> vertexes;
 
-    std::vector<double> edges;
+    std::vector<int> edges2;
     std::vector<double> degs;
   };
 
@@ -40,6 +41,8 @@ namespace im {
 
   void hello();
 
-  std::vector<cv::Vec4i> detectSegments(const cv::Mat &binaryImg);
+  std::vector<cv::Mat> devideImg(const cv::Mat &binaryImg);
+  std::vector<cv::Vec4i> detectSegments(const cv::Mat &edgeImg);
   std::vector<Point> detectVertexes(const std::vector<cv::Vec4i> &segments);
+	std::vector<std::vector<im::Point>> roll(const std::vector<im::Point> shape);
 }
