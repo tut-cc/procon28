@@ -6,16 +6,50 @@
 #include <opencv2/opencv.hpp>
 
 #include <vector>
+#include <iostream>
 
 using namespace ClipperLib;
 
-void DrawPolygons(const Paths& paths, unsigned int fill_color, unsigned int line_color)
+union Color {
+  unsigned int raw;
+  unsigned char bytes[4];
+};
+
+cv::Scalar uint2scalar(unsigned int _color)
 {
-  cv::Mat img;
-  std::vector<cv::Point> points;
-  for (const Path& p : paths) {
-    
+  Color color = Color{_color};
+  std::cerr << (int)color.bytes[0] << " " << (int)color.bytes[1] << " " << (int)color.bytes[2] << " " << (int)color.bytes[3];
+  return cv::Scalar(color.bytes[0], color.bytes[1], color.bytes[2], color.bytes[3]);
+}
+
+void DrawPolygons(const Paths& _paths, unsigned int fill_color, unsigned int line_color)
+{
+  cv::Mat img = cv::Mat::zeros(cv::Size(300, 300), CV_8UC4);
+  std::vector<std::vector<cv::Point>> paths;
+  std::vector<int> npts;
+  
+  img = uint2scalar(0x00FFFFFF);
+  
+  for (const Path& path : _paths) {
+    std::vector<cv::Point> points;
+    for (const IntPoint point : path) {
+      points.push_back(cv::Point(point.X, point.Y));
+    }
+    paths.push_back(points);
+    npts.push_back(points.size());
   }
+  const cv::Point *raw_paths[paths.size()];
+  for (int i = 0; i < paths.size(); ++i) {
+    raw_paths[i] = &paths[i][0];
+  }
+  
+  cv::fillPoly(img, raw_paths, &npts[0], paths.size(), uint2scalar(fill_color));
+  cv::polylines(img, raw_paths, &npts[0], paths.size(), true, uint2scalar(line_color));
+  
+  cv::imshow("clipper sample", img);
+  
+  cv::waitKey(0);
+  cv::destroyAllWindows();
 }
 
 void testclipper()
