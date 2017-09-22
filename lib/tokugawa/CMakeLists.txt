@@ -14,3 +14,6 @@ target_link_libraries(tokugawa ${OPENCV_LIBS})
 install(TARGETS tokugawa ARCHIVE DESTINATION ${CMAKE_SOURCE_DIR}/lib)
 install(FILES tokugawa.hpp DESTINATION ${CMAKE_SOURCE_DIR}/include)
 configure_file(tokugawa.hpp ${CMAKE_SOURCE_DIR}/include)
+
+add_subdirectory( tokugawaTester )
+
