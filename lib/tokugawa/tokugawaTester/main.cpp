@@ -38,13 +38,13 @@ void DrawPolygons(const Paths& _paths, unsigned int fill_color, unsigned int lin
     paths.push_back(points);
     npts.push_back(points.size());
   }
-  const cv::Point *raw_paths[paths.size()];
+  std::vector<cv::Point *> raw_paths(paths.size());
   for (int i = 0; i < paths.size(); ++i) {
     raw_paths[i] = &paths[i][0];
   }
   
-  cv::fillPoly(img, raw_paths, &npts[0], paths.size(), uint2scalar(fill_color));
-  cv::polylines(img, raw_paths, &npts[0], paths.size(), true, uint2scalar(line_color));
+  cv::fillPoly(img, (const cv::Point **) &raw_paths[0], &npts[0], paths.size(), uint2scalar(fill_color));
+  cv::polylines(img, (const cv::Point **) &raw_paths[0], &npts[0], paths.size(), true, uint2scalar(line_color));
   
   cv::imshow("clipper sample", img);
   

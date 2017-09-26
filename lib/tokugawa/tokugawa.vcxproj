@@ -90,11 +90,12 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;TOKUGAWA_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/source-charset:utf-8 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>../imagawa/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include;../imagawa/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <ModuleDefinitionFile>tokugawa.def</ModuleDefinitionFile>
+      <AdditionalDependencies>$(OPENCV_LIB)\opencv_world320d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -142,6 +143,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <ModuleDefinitionFile>tokugawa.def</ModuleDefinitionFile>
+      <AdditionalDependencies>$(OPENCV_LIB)\opencv_world320d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -156,6 +158,9 @@
     <None Include="tokugawa.def" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\clipper\cpp\build\x64-Release\polyclipping.vcxproj">
+      <Project>{5d46940d-4b81-306d-92ef-ce114840c23d}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\imagawa\imagawa.vcxproj">
       <Project>{453d1063-c203-4a83-a95d-3afffcc0a828}</Project>
     </ProjectReference>
