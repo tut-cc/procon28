@@ -18,7 +18,7 @@ union Color {
 cv::Scalar uint2scalar(unsigned int _color)
 {
   Color color = Color{_color};
-  std::cerr << (int)color.bytes[0] << " " << (int)color.bytes[1] << " " << (int)color.bytes[2] << " " << (int)color.bytes[3];
+  std::cerr << (int)color.bytes[0] << " " << (int)color.bytes[1] << " " << (int)color.bytes[2] << " " << (int)color.bytes[3] << std::endl;
   return cv::Scalar(color.bytes[0], color.bytes[1], color.bytes[2], color.bytes[3]);
 }
 
@@ -84,13 +84,73 @@ void testclipper()
 	DrawPolygons(solution, 0x3000FF00, 0xFF006600); //solution shaded green
 }
 
+void gen(std::vector<im::Piece> problem)
+{
+  Clipper c;
+  for (const auto& p : problem) {
+    Path path;
+    for (const auto& v : p.vertexes) {
+      path << IntPoint(v.x, v.y);
+    }
+    c.AddPath(path, ptClip, true);
+  }
+  Paths sol;
+  c.Execute(ctUnion, sol, pftNonZero, pftNonZero);
+
+  std::cerr << "Pathss size : " << sol.size() << std::endl;
+  for (const auto& path : sol) {
+    std::cerr << "\tpath size : " << path.size() << std::endl;
+    for (const auto& point : path) {
+      std::cerr << "\t\t" << point.X << ", " << point.Y << std::endl;
+    }
+  }
+
+  DrawPolygons(sol, 0x3000FF00, 0xFF006600);
+}
+
 int main()
 {
-  tk::tk_hello();
+  //tk::tk_hello();
 
-  testclipper();
+  //testclipper();
 
-  std::vector<std::vector<im::Piece>> problem;
+  std::vector<im::Piece> problem;
+
+  // test matsuri search
+  std::string path;
+  std::cin >> path;
+  std::ifstream ifs(path);
+
+  im::Piece waku;
+  {
+    int n;
+    ifs >> n;
+    std::vector<im::Point> points;
+    for (int i = 0; i < n; ++i) {
+      int x, y;
+      ifs >> x;
+      ifs >> y;
+      points.push_back(im::Point(x, y));
+    }
+    waku = im::Piece(-1, points, std::vector<int>(), std::vector<double>());
+  }
+  for (int id = 0; !ifs.eof(); ++id) {
+    int n;
+    ifs >> n;
+    std::vector<im::Point> points;
+    for (int i = 0; i < n; ++i) {
+      int x, y;
+      ifs >> x;
+      ifs >> y;
+      points.push_back(im::Point(x, y));
+    }
+    im::Piece piece(id, points, std::vector<int>(), std::vector<double>());
+    problem.push_back(piece);
+  }
+
+  //gen(problem);
+
+  auto ans = tk::search(waku, problem, std::vector<im::Answer>(), 0);
 
   return 0;
 }

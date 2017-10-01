@@ -1,5 +1,0 @@
-LIBRARY
-
-EXPORTS
-	tk_hello
-	search

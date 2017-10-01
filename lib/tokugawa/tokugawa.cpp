@@ -9,11 +9,11 @@ void tk::tk_hello()
   std::cout << "hello 徳川" << std::endl;
 }
 
-std::vector<im::Answer> tk::search(std::vector<std::vector<im::Piece>> problem, std::vector<im::Answer> hint = {}, int algo = 0)
+std::vector<im::Answer> tk::search(const im::Piece& waku, const std::vector<im::Piece>& problem, const std::vector<im::Answer>& hint = {}, const int algo = 0)
 {
   switch (algo) {
   case 0:
-    return tk::matsuriSearch(problem, hint);
+    return tk::matsuri_search(waku, problem, hint);
   default:
     std::stringstream ss;
     ss << "No such a algorithm number : " << algo;

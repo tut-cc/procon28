@@ -24,9 +24,6 @@
   <ItemGroup>
     <ClCompile Include="imagawa.cpp" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="imagawa.def" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{453D1063-C203-4A83-A95D-3AFFFCC0A828}</ProjectGuid>
@@ -49,7 +46,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>

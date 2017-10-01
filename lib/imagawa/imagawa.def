@@ -1,7 +1,0 @@
-LIBRARY
-
-EXPORTS
-	hello
-	devideImg
-	detectSegments
-	detectVertexes
