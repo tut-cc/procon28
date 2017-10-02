@@ -18,6 +18,10 @@ im::Point::Point() : Point(0, 0) {}
 
 im::Point::Point(int x_, int y_) : x(x_), y(y_) {}
 
+im::Pointd::Pointd() : Pointd(0, 0) {}
+
+im::Pointd::Pointd(double x_, double y_) : x(x_), y(y_) {}
+
 im::Piece::Piece() : Piece(0, {}, {}, {}) {}
 
 im::Piece::Piece(int id_, const std::vector<im::Point> &vertexes_, const std::vector<int> &edges2_,
@@ -132,7 +136,7 @@ std::vector<cv::Vec4i> im::detectSegments(const cv::Mat &edgeImg) {
   return segments;
 }
 
-im::Point getpoint(cv::Vec4i v1_o, cv::Vec4i v2_o){
+im::Pointd getpoint(cv::Vec4i v1_o, cv::Vec4i v2_o){
   //2つの辺の交点を求める
   /*
   0:start x
@@ -157,14 +161,14 @@ im::Point getpoint(cv::Vec4i v1_o, cv::Vec4i v2_o){
   //if(a == c) c+=1; //応急処置
 
 	//傾きが一緒ならば省略
-	if((a-c)*(a-c) < SLO) return im::Point(-1,-1);
+	if((a-c)*(a-c) < SLO) return im::Pointd(-1,-1);
   double x = (d - b)/(a - c);
   double y = a* x + b;
 
-  return im::Point(x,y);
+  return im::Pointd(x,y);
 }
 
-double getdis(cv::Vec4i v1, cv::Vec4i v2, im::Point vp){
+double getdis(cv::Vec4i v1, cv::Vec4i v2, im::Pointd vp){
   //各線分のいずれかの端っこからの距離を測定
 
   /*int midy1 = abs(v1[1]-v1[3])/2;
@@ -187,7 +191,7 @@ double getdis(cv::Vec4i v1, cv::Vec4i v2, im::Point vp){
   return std::min(dis1, dis2);
 }
 
-std::vector<im::Point> im::detectVertexes(const std::vector<cv::Vec4i> &segments) {
+std::vector<im::Pointd> im::detectVertexes(const std::vector<cv::Vec4i> &segments) {
 	/*
 	vps_whouse
 	vps
@@ -197,11 +201,11 @@ std::vector<im::Point> im::detectVertexes(const std::vector<cv::Vec4i> &segments
 	int i = 0;
 	int vsize = segments.size(); //辺数
 	std::vector<double> dises;
-	std::vector<im::Point> vps_whouse; //交点の仮置き場
-	std::vector<im::Point> vps;
+	std::vector<im::Pointd> vps_whouse; //交点の仮置き場
+	std::vector<im::Pointd> vps;
 
 	for(cv::Vec4i vecs:segments){ //辺1つを取得 [基準辺]
-		im::Point vp;
+		im::Pointd vp;
 		for(int j=0; j<vsize ;j++){ //別の辺を取得(ダブり) [比較辺]
 			if(i == j) continue;
 			vp = getpoint(vecs, segments[j]);
@@ -234,12 +238,15 @@ N:na xa1 ya1 xa2 ya2 ... xana yana:nb xb1 yb1 xb2 yb2 ...xbna ybna:...
 //For the time being, coordinates is written by [mm]
 
 
-std::vector<std::vector<im::Point>> im::roll(std::vector<im::Point> shape){
+std::vector<std::vector<im::Point>> im::roll(std::vector<im::Pointd> shape){
 	//Transfer [pix -> mm]
-	double ratio = 55/512/2.5; //[(mm/pix/mm)]
-	for(auto &xy : shape){
+	double ratio = 55/(512*2.5); //[(mm/pix/mm)]
+	//double ratio = 1; //[(mm/pix/mm)]
+	std::cout << "-----" << std::endl;
+	for(im::Pointd &xy : shape){
 		xy.x *= ratio;
 		xy.y *= ratio;
+		//std::cout << xy.x << "," << xy.y << std::endl;
 	}
 
 	int len_corn = shape.size();

@@ -10,7 +10,6 @@ int main()
 {
   im::hello();
   tk::hello();
-  tk::hello();
 
   std::string str;
   std::cin >> str;
@@ -27,12 +26,12 @@ int main()
     auto segments = im::detectSegments(pieceImg);
     auto vertexes = im::detectVertexes(segments);
 		//BY Yoshiwatari
-		std::cout << "----------" << std::endl;
-		auto rolltexes = im::roll(vertexes);
+		auto rolltexes = im::roll(vertexes); // <-これが1ピース当たりの回転を含めた座標を返します
+		std::cout << id << "-----" << std::endl;
 		for(auto &rolling : rolltexes){
+			std::cout << "=====" << std::endl;
 			for(auto &segment : rolling){
-				std::cout << segment.x << "," 
-					<< segment.y << std::endl;
+				std::cout << ">> " << segment.x << "," << segment.y << std::endl;
 			}
 		}
 
