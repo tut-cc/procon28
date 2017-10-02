@@ -148,6 +148,21 @@ int main()
     problem.push_back(piece);
   }
 
+  std::vector<im::Point> offsets;
+  for (auto& piece : problem) {
+    int minx = 1 << 28;
+    int miny = 1 << 28;
+    for (const auto& point : piece.vertexes) {
+      minx = std::min(minx, point.x);
+      miny = std::min(miny, point.y);
+    }
+    offsets.push_back(im::Point(minx, miny));
+    for (auto& point : piece.vertexes) {
+      point.x -= minx;
+      point.y -= miny;
+    }
+  }
+
   //gen(problem);
 
   auto ans = tk::search(waku, problem, std::vector<im::Answer>(), 0);

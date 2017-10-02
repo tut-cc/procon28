@@ -1,6 +1,11 @@
 #include "matsuri.hpp"
 #include "polyclipping/clipper.hpp"
 
+#include <bitset>
+
+const int MAX_NUM_OF_PEICES = 50;
+const int TATE = 65;
+const int YOKO = 101;
 const double PI = 4 * std::atan(1);
 
 namespace cl = ClipperLib;
@@ -8,8 +13,10 @@ namespace cl = ClipperLib;
 struct State {
   cl::Paths waku;
   cl::Paths uni;
+  std::bitset<MAX_NUM_OF_PEICES> set;
+  std::vector<im::Point> haiti;
 
-  State(const cl::Paths& waku, const cl::Paths& uni = cl::Paths()) {
+  State(const cl::Paths& waku, const cl::Paths& uni = cl::Paths()) : set(), haiti(MAX_NUM_OF_PEICES) {
     this->waku = waku;
     this->uni = uni;
   }
@@ -132,6 +139,23 @@ void test_degree()
 
 std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vector<im::Piece>& problem, const std::vector<im::Answer>& hint)
 {
-  std::vector<std::priority_queue<State, std::vector<State>, MatsuriCompare>> stacks(problem.size());
+  const int n = problem.size();
+  std::vector<std::priority_queue<State, std::vector<State>, MatsuriCompare>> stacks(n + 1);
+  State atom(piece2paths(waku));
+  stacks[0].push(atom);
+  std::vector<cl::Path> paths;
+  for (const auto& piece : problem) {
+    paths.push_back(piece2paths(piece).front());
+  }
+  for (int i = 0; i <= n; ++i) {
+    if (stacks[i].size() == 0) {
+      continue;
+    }
+    State node = stacks[i].top();
+    stacks[i].pop();
+    for (int j = 0; j < n; ++j) {
+      // pathsを当てはめる
+    }
+  }
   return std::vector<im::Answer>();
 }
