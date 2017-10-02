@@ -10,6 +10,7 @@ int main()
 {
   im::hello();
   tk::hello();
+  tk::hello();
 
   std::string str;
   std::cin >> str;
@@ -25,6 +26,15 @@ int main()
     cv::Canny(pieceImg, pieceImg, 50, 200, 3);
     auto segments = im::detectSegments(pieceImg);
     auto vertexes = im::detectVertexes(segments);
+		//BY Yoshiwatari
+		std::cout << "----------" << std::endl;
+		auto rolltexes = im::roll(vertexes);
+		for(auto &rolling : rolltexes){
+			for(auto &segment : rolling){
+				std::cout << segment.x << "," 
+					<< segment.y << std::endl;
+			}
+		}
 
     cv::cvtColor(pieceImg, pieceImg, CV_GRAY2BGR);
     for (auto &segment : segments) {
