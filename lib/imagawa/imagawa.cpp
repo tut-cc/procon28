@@ -234,7 +234,7 @@ N:na xa1 ya1 xa2 ya2 ... xana yana:nb xb1 yb1 xb2 yb2 ...xbna ybna:...
 //For the time being, coordinates is written by [mm]
 
 
-std::vector<std::vector<im::Point>> roll(std::vector<im::Point> shape){
+std::vector<std::vector<im::Point>> im::roll(std::vector<im::Point> shape){
 	//Transfer [pix -> mm]
 	double ratio = 55/512/2.5; //[(mm/pix/mm)]
 	for(auto &xy : shape){
