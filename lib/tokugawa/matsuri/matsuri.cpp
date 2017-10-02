@@ -40,7 +40,7 @@ static double degree(const cl::IntPoint& a, const cl::IntPoint& b, const cl::Int
   double theta = std::acos(cos);
   const int op = [](auto v, auto w) {
     return v.X * w.Y - v.Y * w.X;
-  }(va, vb);
+  }(cl::IntPoint(b.X - a.X, b.Y - a.Y), vb);
   // CW で外積が負だったら OR CCW で外積が正だったら
   if ((orientation && op < 0)
       || (!orientation && op > 0)) {
@@ -103,6 +103,32 @@ public:
     return false;
   }
 };
+
+#include <iostream>
+#include <string>
+void test_degree()
+{
+  cl::Paths test(1);
+  test[0] << cl::IntPoint(0, 0) << cl::IntPoint(50, 100) << cl::IntPoint(100, 0);
+  //test[0] << cl::IntPoint(0, 0) << cl::IntPoint(0, 2) << cl::IntPoint(1, 2)
+  //  << cl::IntPoint(1, 1) << cl::IntPoint(2, 1) << cl::IntPoint(2, 2)
+  //  << cl::IntPoint(3, 2) << cl::IntPoint(3, 0);
+  State atom(test);
+  const auto& v = atom.waku.front();
+  const int n = v.size();
+  const bool orientation = cl::Orientation(atom.waku.front());
+  auto p2s = [](cl::IntPoint p) {
+    return "(" + std::to_string(p.X) + ", " + std::to_string(p.Y) + ")";
+  };
+  std::cerr << "atom orientation : " << orientation << std::endl;
+  for (int i = 0; i < n; ++i) {
+    cl::IntPoint left(v[(i - 1 + n) % n].X, v[(i - 1 + n) % n].Y);
+    cl::IntPoint me(v[i].X, v[i].Y);
+    cl::IntPoint right(v[(i + 1) % n].X, v[(i + 1) % n].Y);
+    auto theta = degree(left, me, right, orientation);
+    std::cerr << "<" << p2s(left) << " " << p2s(me) << " " << p2s(right) << " : " << (theta * 180 / PI) << std::endl;
+  }
+}
 
 std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vector<im::Piece>& problem, const std::vector<im::Answer>& hint)
 {
