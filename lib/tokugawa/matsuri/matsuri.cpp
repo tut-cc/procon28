@@ -1,9 +1,11 @@
 #include "matsuri.hpp"
 #include "polyclipping/clipper.hpp"
 
+const double PI = 4 * std::atan(1);
+
 namespace cl = ClipperLib;
 
-static struct State {
+struct State {
   cl::Paths waku;
   cl::Paths uni;
 
@@ -24,37 +26,79 @@ static cl::Paths piece2paths(const im::Piece& piece)
   return dst;
 }
 
-// <abc‚ğ•Ô‚·
-static double degree(const cl::IntPoint& a, const cl::IntPoint& b, const cl::IntPoint& c)
+// <abcã‚’è¿”ã™
+static double degree(const cl::IntPoint& a, const cl::IntPoint& b, const cl::IntPoint& c, bool orientation)
 {
-
+  const cl::IntPoint va(a.X - b.X, a.Y - b.Y);
+  const cl::IntPoint vb(c.X - b.X, c.Y - b.Y);
+  auto len = [](auto v) {
+    return std::sqrt(v.X * v.X + v.Y * v.Y);
+  };
+  const double cos = [](auto v, auto w) {
+    return v.X * w.X + v.Y * w.Y;
+  }(va, vb) / (len(va) * len(vb));
+  double theta = std::acos(cos);
+  const int op = [](auto v, auto w) {
+    return v.X * w.Y - v.Y * w.X;
+  }(va, vb);
+  // CW ã§å¤–ç©ãŒè² ã ã£ãŸã‚‰ OR CCW ã§å¤–ç©ãŒæ­£ã ã£ãŸã‚‰
+  if ((orientation && op < 0)
+      || (!orientation && op > 0)) {
+    theta = 2 * PI - theta;
+  }
+  return theta;
 }
 
-// ‚Æ‚ñ‚ª‚è‹ï‡‚ğ•Ô‚·B
-// ’l‚ª‘å‚«‚¢‚Ù‚Ç‚Æ‚ñ‚ª‚Á‚Ä‚¢‚éB
-// O(n) : n‚ªŠp‚Ì”
+// ã¨ã‚“ãŒã‚Šå…·åˆã‚’è¿”ã™ã€‚
+// å€¤ãŒå¤§ãã„ã»ã©ã¨ã‚“ãŒã£ã¦ã„ã‚‹ã€‚
+// è§’åº¦ã®åˆ†æ•£ã‚’æ±‚ã‚ã‚‹ã“ã¨ã«ã—ãŸã€‚
+// O(n) : nãŒè§’ã®æ•°
 static double cal_togari(const State& s)
 {
-  int n = s.uni.front.size();
+  const auto path = s.waku.front();
+  const int n = path.size();
+  const bool orientation = cl::Orientation(path);
   double ave = 0;
+  std::vector<double> memo(n);
+  for (int i = 0; i < n; ++i) {
+    const auto left = path[(i - 1 + n) % n];
+    const auto me = path[i];
+    const auto right = path[(i + 1) % n];
+    const double theta = degree(left, me, right, orientation);
+    ave += theta;
+    memo[i] = theta;
+  }
+  ave /= n;
+  double sum = 0;
+  for (const auto v : memo) {
+    sum += (v - ave) * (v - ave);
+  }
+  sum /= n;
+  return sum;
 }
 
-static class MatsuriCompare
+class MatsuriCompare
 {
 public:
-  // vs‚Ì—Dæ“x‚ª‚‚¯‚ê‚Îtrue‚ğ•Ô‚·
+  // vsã®å„ªå…ˆåº¦ãŒé«˜ã‘ã‚Œã°trueã‚’è¿”ã™
   bool operator() (State atom, State vs)
   {
-    // ‘SÁ‚µ‚ğ—Dæ
+    // å…¨æ¶ˆã—ã‚’å„ªå…ˆ
     if (vs.waku.size() == 0) {
       return true;
     }
     if (atom.waku.size() == 0) {
       return false;
     }
-    // Šp”‚ª­‚È‚¢•û‚ğ—Dæ
-    if (vs.waku.front.size() != atom.waku.front.size()) {
-      return vs.waku.front.size() < atom.waku.front.size();
+    // è§’æ•°ãŒå°‘ãªã„æ–¹ã‚’å„ªå…ˆ
+    if (vs.waku.front().size() != atom.waku.front().size()) {
+      return vs.waku.front().size() < atom.waku.front().size();
+    }
+    // è§’åº¦ã®åˆ†æ•£ãŒå°ã•ã„æ–¹ã‚’å„ªå…ˆ
+    const auto ta = cal_togari(atom);
+    const auto tb = cal_togari(vs);
+    if (ta != tb) {
+      return tb < ta;
     }
     return false;
   }
