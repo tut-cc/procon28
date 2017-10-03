@@ -2,6 +2,8 @@
 #include "polyclipping/clipper.hpp"
 
 #include <bitset>
+#include <thread>
+#include <mutex>
 
 const int MAX_NUM_OF_PEICES = 50;
 const int TATE = 65;
@@ -24,7 +26,7 @@ struct State {
   Info info;
 
   State(const cl::Paths& waku, const cl::Paths& uni = cl::Paths(), const Info& info = Info())
-      : waku(waku), uni(uni), info(info) {}
+    : waku(waku), uni(uni), info(info) {}
 };
 
 static cl::Paths piece2paths(const im::Piece& piece)
@@ -55,7 +57,7 @@ static double degree(const cl::IntPoint& a, const cl::IntPoint& b, const cl::Int
   }(cl::IntPoint(b.X - a.X, b.Y - a.Y), vb);
   // CW で外積が負だったら OR CCW で外積が正だったら
   if ((orientation && op < 0)
-      || (!orientation && op > 0)) {
+    || (!orientation && op > 0)) {
     theta = 2 * PI - theta;
   }
   return theta;
@@ -283,84 +285,109 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
   int count = 0;
   std::set<std::vector<im::Point>, PointVecCompare> done;
   done.insert(atom.info.haiti);
-  for (int g = 0;; ++g) {
-    std::cerr << "---- " << g << " GENERATION ----" << std::endl;
-    for (int i = 0; i <= n; ++i) {
-      if (stacks[i].size() == 0) {
-        continue;
-      }
+  std::vector<std::thread> threads;
+  std::vector<std::mutex> mutexes(n + 1);
+  std::mutex best_mutex, done_mutex, num_mutex;
+  int warihuri = 0;
+  for (int i = 0; i <= n; ++i) {
+    std::thread th([&mutexes, &best_mutex, &done_mutex, &num_mutex,
+        &stacks, &best_score, &best_info, &count, &done, &warihuri, paths, n]() {
+      num_mutex.lock();
+      int i = warihuri++;
+      num_mutex.unlock();
       std::cerr << "[" << i << "]" << std::endl;
-      State node = stacks[i].top();
-      double score = node.waku.size() == 0 ? 0 : std::abs(cl::Area(node.waku.front()));
-      if (best_score > score) {
-        best_score = score;
-        best_info = node.info;
-        ++count;
-        std::cerr << "(" << count << ") best score is renewed! : " << best_score << " at " << i << std::endl;
-        if (count % 10 == 0) {
-          DrawPolygons(node.waku, 0x160000FF, 0x600000FF); //blue
-          DrawPolygons(node.uni, 0x20FFFF00, 0x30FF0000); //orange
-        }
-      }
-      stacks[i].pop();
-      for (int j = 0; j < n; ++j) {
-        //std::cerr << "\tusing " << j << "-th path" << std::endl;
-        if (node.info.set[j]) {
-          //std::cerr << "\t\tused, skip" << std::endl;
+      for (;;) {
+        mutexes[i].lock();
+        if (stacks[i].size() == 0) {
+          mutexes[i].unlock();
+          std::this_thread::sleep_for(std::chrono::milliseconds(50));
           continue;
         }
-        auto next_set = node.info.set;
-        next_set[j] = true;
-        int awawa = 0;
-        // pathsを当てはめる
-        for (int x = 0; x < YOKO; ++x) {
-          for (int y = 0; y < TATE; ++y) {
-            const auto& path = paths[j];
-            // はみ出しがある配置ならNG
-            bool ok = true;
-            for (const auto& point : path) {
-              ok &= 0 <= x + point.X && x + point.X < YOKO
-                && 0 <= y + point.Y && y + point.Y < TATE;
-            }
-            if (!ok) {
-              continue;
-            }
-            cl::Path zurasied_path = path;
-            for (auto& point : zurasied_path) {
-              point.X += x;
-              point.Y += y;
-            }
-            bool dame = false;
-            auto ret_waku = cut_waku(node.waku, zurasied_path);
-            dame |= ret_waku.first;
-            auto ret_uni = patch_uni(node.uni, zurasied_path);
-            dame |= ret_uni.first;
-            if (dame) {
-              continue;
-            }
-            auto next_waku = ret_waku.second;
-            auto next_uni = ret_uni.second;
-            auto next_haiti = node.info.haiti;
-            next_haiti[j] = im::Point(x, y);
-            Info next_info(next_set, next_haiti);
-            State next(next_waku, next_uni, next_info);
-            if (done.count(next_haiti) > 0) {
-              continue;
-            }
-            done.insert(next_haiti);
-            stacks[i + 1].push(next);
-            //++awawa;
-            //cl::Paths tmp;
-            //tmp << zurasied_path;
-            //std::cerr << "zurashi" << x << ", " << y << std::endl;
-            //DrawPolygons(node.waku, 0x160000FF, 0x600000FF); //blue
-            //DrawPolygons(tmp, 0x20FFFF00, 0x30FF0000); //orange
-            //DrawPolygons(next_waku, 0x3000FF00, 0xFF006600); //solution shaded green
+        State node = stacks[i].top();
+        stacks[i].pop();
+        mutexes[i].unlock();
+        double score = node.waku.size() == 0 ? 0 : std::abs(cl::Area(node.waku.front()));
+        best_mutex.lock();
+        if (best_score > score) {
+          best_score = score;
+          best_info = node.info;
+          ++count;
+          std::cerr << "(" << count << ") best score is renewed! : " << best_score << " at " << i << std::endl;
+          if (count % 10 == 0) {
+            DrawPolygons(node.waku, 0x160000FF, 0x600000FF); //blue
+            DrawPolygons(node.uni, 0x20FFFF00, 0x30FF0000); //orange
           }
         }
-        //std::cerr << "\t\t" << awawa << " transed to next" << std::endl;
+        best_mutex.unlock();
+        for (int j = 0; j < n; ++j) {
+          //std::cerr << "\tusing " << j << "-th path" << std::endl;
+          if (node.info.set[j]) {
+            //std::cerr << "\t\tused, skip" << std::endl;
+            continue;
+          }
+          auto next_set = node.info.set;
+          next_set[j] = true;
+          int awawa = 0;
+          // pathsを当てはめる
+          for (int x = 0; x < YOKO; ++x) {
+            for (int y = 0; y < TATE; ++y) {
+              const auto& path = paths[j];
+              // はみ出しがある配置ならNG
+              bool ok = true;
+              for (const auto& point : path) {
+                ok &= 0 <= x + point.X && x + point.X < YOKO
+                  && 0 <= y + point.Y && y + point.Y < TATE;
+              }
+              if (!ok) {
+                continue;
+              }
+              cl::Path zurasied_path = path;
+              for (auto& point : zurasied_path) {
+                point.X += x;
+                point.Y += y;
+              }
+              bool dame = false;
+              auto ret_waku = cut_waku(node.waku, zurasied_path);
+              dame |= ret_waku.first;
+              auto ret_uni = patch_uni(node.uni, zurasied_path);
+              dame |= ret_uni.first;
+              if (dame) {
+                continue;
+              }
+              auto next_waku = ret_waku.second;
+              auto next_uni = ret_uni.second;
+              auto next_haiti = node.info.haiti;
+              next_haiti[j] = im::Point(x, y);
+              Info next_info(next_set, next_haiti);
+              State next(next_waku, next_uni, next_info);
+              done_mutex.lock();
+              if (done.count(next_haiti) > 0) {
+                continue;
+              }
+              done.insert(next_haiti);
+              done_mutex.unlock();
+              mutexes[i + 1].lock();
+              stacks[i + 1].push(next);
+              mutexes[i + 1].unlock();
+              //++awawa;
+              //cl::Paths tmp;
+              //tmp << zurasied_path;
+              //std::cerr << "zurashi" << x << ", " << y << std::endl;
+              //DrawPolygons(node.waku, 0x160000FF, 0x600000FF); //blue
+              //DrawPolygons(tmp, 0x20FFFF00, 0x30FF0000); //orange
+              //DrawPolygons(next_waku, 0x3000FF00, 0xFF006600); //solution shaded green
+            }
+          }
+          //std::cerr << "\t\t" << awawa << " transed to next" << std::endl;
+        }
       }
-    }
+    });
+    threads.push_back(std::move(th));
   }
+
+  for (auto& th : threads) {
+    th.join();
+  }
+
   return std::vector<im::Answer>();
 }
