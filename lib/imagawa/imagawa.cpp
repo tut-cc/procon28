@@ -16,20 +16,20 @@
 
 im::Point::Point() : Point(0, 0) {}
 
-im::Point::Point(int x_, int y_) : x(x_), y(y_) {}
+im::Point::Point(int x, int y) : x(x), y(y) {}
 
 im::Pointd::Pointd() : Pointd(0, 0) {}
 
-im::Pointd::Pointd(double x_, double y_) : x(x_), y(y_) {}
+im::Pointd::Pointd(double x, double y) : x(x), y(y) {}
 
 im::Piece::Piece() : Piece(0, {}, {}, {}) {}
 
-im::Piece::Piece(int id_, const std::vector<im::Point> &vertexes_, const std::vector<int> &edges2_,
-  const std::vector<double> &degs_) : id(id_), vertexes(vertexes_), edges2(edges2_), degs(degs_) {}
+im::Piece::Piece(int id, const std::vector<im::Point> &vertexes, const std::vector<int> &edges2,
+  const std::vector<double> &degs) : id(id), vertexes(vertexes), edges2(edges2), degs(degs) {}
 
 im::Answer::Answer() : Answer(0, {}) {}
 
-im::Answer::Answer(int id_, const std::vector<im::Point> &vertexes_) : id(id_), vertexes(vertexes_) {}
+im::Answer::Answer(int id, const std::vector<im::Point> &vertexes) : id(id), vertexes(vertexes) {}
 
 void im::hello() {
   std::cout << "hello 今川" << std::endl;
@@ -136,7 +136,7 @@ std::vector<cv::Vec4i> im::detectSegments(const cv::Mat &edgeImg) {
   return segments;
 }
 
-im::Pointd getpoint(cv::Vec4i v1_o, cv::Vec4i v2_o){
+im::Pointd getpoint(cv::Vec4i v1_o, cv::Vec4i v2_o) {
   //2つの辺の交点を求める
   /*
   0:start x
@@ -145,30 +145,30 @@ im::Pointd getpoint(cv::Vec4i v1_o, cv::Vec4i v2_o){
   3:end   y
    */
 
-	const int SLO = 10; //
+  const int SLO = 10; //
   std::vector<double> v1(4);
   std::vector<double> v2(4);
-  for(int i=0;i<4;i++){
+  for (int i = 0; i < 4; i++) {
     v1[i] = v1_o[i];
     v2[i] = v2_o[i];
   }
-  if(v1[2]-v1[0] == 0) v1[2] += 0.001; //傾き無限大対策(応急処置)
-  double a = ( v1[3] -  v1[1])/( v1[2] -  v1[0]);
-  double b =  v1[1] - a* v1[0];
-  if(v2[2]-v2[0] == 0) v2[2] += 0.001; //傾き無限大対策(応急処置)
-  double c = ( v2[3] -  v2[1])/( v2[2] -  v2[0]);
-  double d =  v2[1] - c* v2[0];
+  if (v1[2] - v1[0] == 0) v1[2] += 0.001; //傾き無限大対策(応急処置)
+  double a = (v1[3] - v1[1]) / (v1[2] - v1[0]);
+  double b = v1[1] - a* v1[0];
+  if (v2[2] - v2[0] == 0) v2[2] += 0.001; //傾き無限大対策(応急処置)
+  double c = (v2[3] - v2[1]) / (v2[2] - v2[0]);
+  double d = v2[1] - c* v2[0];
   //if(a == c) c+=1; //応急処置
 
-	//傾きが一緒ならば省略
-	if((a-c)*(a-c) < SLO) return im::Pointd(-1,-1);
-  double x = (d - b)/(a - c);
+    //傾きが一緒ならば省略
+  if ((a - c)*(a - c) < SLO) return im::Pointd(-1, -1);
+  double x = (d - b) / (a - c);
   double y = a* x + b;
 
-  return im::Pointd(x,y);
+  return im::Pointd(x, y);
 }
 
-double getdis(cv::Vec4i v1, cv::Vec4i v2, im::Pointd vp){
+double getdis(cv::Vec4i v1, cv::Vec4i v2, im::Pointd vp) {
   //各線分のいずれかの端っこからの距離を測定
 
   /*int midy1 = abs(v1[1]-v1[3])/2;
@@ -192,41 +192,41 @@ double getdis(cv::Vec4i v1, cv::Vec4i v2, im::Pointd vp){
 }
 
 std::vector<im::Pointd> im::detectVertexes(const std::vector<cv::Vec4i> &segments) {
-	/*
-	vps_whouse
-	vps
-	getpoint
-	getdis
-	*/
-	int i = 0;
-	int vsize = segments.size(); //辺数
-	std::vector<double> dises;
-	std::vector<im::Pointd> vps_whouse; //交点の仮置き場
-	std::vector<im::Pointd> vps;
+  /*
+  vps_whouse
+  vps
+  getpoint
+  getdis
+  */
+  int i = 0;
+  int vsize = segments.size(); //辺数
+  std::vector<double> dises;
+  std::vector<im::Pointd> vps_whouse; //交点の仮置き場
+  std::vector<im::Pointd> vps;
 
-	for(cv::Vec4i vecs:segments){ //辺1つを取得 [基準辺]
-		im::Pointd vp;
-		for(int j=0; j<vsize ;j++){ //別の辺を取得(ダブり) [比較辺]
-			if(i == j) continue;
-			vp = getpoint(vecs, segments[j]);
-			double dis = getdis(vecs, segments[j], vp);
-			vps_whouse.push_back(vp);
-			dises.push_back(dis);
-		}
-		if(vps_whouse.size() == 0) break;
-		//最小値を求める
-		std::vector<double>::iterator min_dis = std::min_element(dises.begin(), dises.end());
-		int index = distance(dises.begin(), min_dis);
-		vps.push_back(vps_whouse[index]); 
-		vps_whouse.clear();
-		vps_whouse.shrink_to_fit();
-		dises.clear();
-		dises.shrink_to_fit();
-		i++; //次の基準辺へ
-		//if(i==4) break; //!!!デバッグ用　消すこと!!!
-	}
+  for (cv::Vec4i vecs : segments) { //辺1つを取得 [基準辺]
+    im::Pointd vp;
+    for (int j = 0; j < vsize; j++) { //別の辺を取得(ダブり) [比較辺]
+      if (i == j) continue;
+      vp = getpoint(vecs, segments[j]);
+      double dis = getdis(vecs, segments[j], vp);
+      vps_whouse.push_back(vp);
+      dises.push_back(dis);
+    }
+    if (vps_whouse.size() == 0) break;
+    //最小値を求める
+    std::vector<double>::iterator min_dis = std::min_element(dises.begin(), dises.end());
+    int index = distance(dises.begin(), min_dis);
+    vps.push_back(vps_whouse[index]);
+    vps_whouse.clear();
+    vps_whouse.shrink_to_fit();
+    dises.clear();
+    dises.shrink_to_fit();
+    i++; //次の基準辺へ
+    //if(i==4) break; //!!!デバッグ用　消すこと!!!
+  }
 
-	return vps;
+  return vps;
 }
 /*
 ######################################################################
@@ -238,78 +238,79 @@ N:na xa1 ya1 xa2 ya2 ... xana yana:nb xb1 yb1 xb2 yb2 ...xbna ybna:...
 //For the time being, coordinates is written by [mm]
 
 
-std::vector<std::vector<im::Point>> im::roll(std::vector<im::Pointd> shape){
-	//Transfer [pix -> mm]
-	double ratio = 55/(512*2.5); //[(mm/pix/mm)]
-	//double ratio = 1; //[(mm/pix/mm)]
-	std::cout << "-----" << std::endl;
-	for(im::Pointd &xy : shape){
-		xy.x *= ratio;
-		xy.y *= ratio;
-		//std::cout << xy.x << "," << xy.y << std::endl;
-	}
+std::vector<std::vector<im::Point>> im::roll(std::vector<im::Pointd> shape) {
+  //Transfer [pix -> mm]
+  double ratio = 55 / (512 * 2.5); //[(mm/pix/mm)]
+  //double ratio = 1; //[(mm/pix/mm)]
+  std::cout << "-----" << std::endl;
+  for (im::Pointd &xy : shape) {
+    xy.x *= ratio;
+    xy.y *= ratio;
+    //std::cout << xy.x << "," << xy.y << std::endl;
+  }
 
-	int len_corn = shape.size();
-	std::vector<double> len_side(len_corn, 0);
-	std::vector<im::Point> tmp_res(len_corn, im::Point(0,0));
-	std::vector<std::vector<im::Point>> result;
+  int len_corn = shape.size();
+  std::vector<double> len_side(len_corn, 0);
+  std::vector<im::Point> tmp_res(len_corn, im::Point(0, 0));
+  std::vector<std::vector<im::Point>> result;
 
-	for(int corn=0;corn<len_corn;corn++){
-		int dx = shape[corn].x 
-			- shape[(corn<len_corn-1)?corn+1:0].x;
-		int dy = shape[corn].y 
-			- shape[(corn<len_corn-1)?corn+1:0].y;
-		len_side[corn] = sqrt(dx*dx+dy*dy);
-	}
+  for (int corn = 0; corn < len_corn; corn++) {
+    int dx = shape[corn].x
+      - shape[(corn < len_corn - 1) ? corn + 1 : 0].x;
+    int dy = shape[corn].y
+      - shape[(corn < len_corn - 1) ? corn + 1 : 0].y;
+    len_side[corn] = sqrt(dx*dx + dy*dy);
+  }
 
-	/*
-	>>terms to stop<<
-	1. Theta > 90
-	2. dx > len_side[0]
+  /*
+  >>terms to stop<<
+  1. Theta > 90
+  2. dx > len_side[0]
 
-	>>terms to break<<
-	1. A point isn't at any grids.
-	*/
+  >>terms to break<<
+  1. A point isn't at any grids.
+  */
 
-	double dy0 = shape[1].y - shape[0].y;
-	double theta0 = 0;
-	if(dy0!=0){
-		theta0 = acos(dy0/len_side[0]);
-		//cout << len_side[0] << endl;
-	}else{
-		theta0 = 0;
-	}
-	double theta = 0, dtheta = 0;
-	for(double dy=(int)len_side[0];dy<=len_side[0] && theta <= PI/4;dy--){
-		//(dx!=0) ? theta = asin(dx/len_side[0]) : theta = 0;
-		theta = acos(dy/len_side[0]);
-		dtheta = theta0 - theta;
-		//cout << theta0*DP << ":" << theta*DP << ":" << dtheta*DP << endl;
-		for(int corn=0;corn<len_corn;corn++){
-			//Rotation matrix
-			double x = 
-				(shape[corn].x-shape[0].x)*cos(dtheta) -
-				(shape[corn].y-shape[0].y)*sin(dtheta);
-			double y = 
-				(shape[corn].x-shape[0].x)*sin(dtheta) +
-				(shape[corn].y-shape[0].y)*cos(dtheta);
-			/*cout << x << "," << y << endl;
-			cout << ceil(x) << "," << ceil(y) << endl;
-			cout << floor(x) << "," << floor(y) << endl;*/
-			bool flagx = false;
-			bool flagy = false;
-			if(abs(floor(x)-x)<derror){	x = floor(x); flagx = true; }
-			if(abs(floor(y)-y)<derror){ y = floor(y); flagy = true; }
-			if(abs(ceil(x)-x)<derror){ x = ceil(x); flagx = true; }
-			if(abs(ceil(y)-y)<derror){ y = ceil(y); flagy = true; }
-			if(flagx && flagy) tmp_res[corn] = im::Point(x,y);
-			else break;
+  double dy0 = shape[1].y - shape[0].y;
+  double theta0 = 0;
+  if (dy0 != 0) {
+    theta0 = acos(dy0 / len_side[0]);
+    //cout << len_side[0] << endl;
+  }
+  else {
+    theta0 = 0;
+  }
+  double theta = 0, dtheta = 0;
+  for (double dy = (int)len_side[0]; dy <= len_side[0] && theta <= PI / 4; dy--) {
+    //(dx!=0) ? theta = asin(dx/len_side[0]) : theta = 0;
+    theta = acos(dy / len_side[0]);
+    dtheta = theta0 - theta;
+    //cout << theta0*DP << ":" << theta*DP << ":" << dtheta*DP << endl;
+    for (int corn = 0; corn < len_corn; corn++) {
+      //Rotation matrix
+      double x =
+        (shape[corn].x - shape[0].x)*cos(dtheta) -
+        (shape[corn].y - shape[0].y)*sin(dtheta);
+      double y =
+        (shape[corn].x - shape[0].x)*sin(dtheta) +
+        (shape[corn].y - shape[0].y)*cos(dtheta);
+      /*cout << x << "," << y << endl;
+      cout << ceil(x) << "," << ceil(y) << endl;
+      cout << floor(x) << "," << floor(y) << endl;*/
+      bool flagx = false;
+      bool flagy = false;
+      if (abs(floor(x) - x) < derror) { x = floor(x); flagx = true; }
+      if (abs(floor(y) - y) < derror) { y = floor(y); flagy = true; }
+      if (abs(ceil(x) - x) < derror) { x = ceil(x); flagx = true; }
+      if (abs(ceil(y) - y) < derror) { y = ceil(y); flagy = true; }
+      if (flagx && flagy) tmp_res[corn] = im::Point(x, y);
+      else break;
 
-			if(corn == len_corn-1){
-				result.push_back(tmp_res); 
-			}
-		}
-	}
+      if (corn == len_corn - 1) {
+        result.push_back(tmp_res);
+      }
+    }
+  }
 
-	return result;
+  return result;
 }

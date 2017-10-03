@@ -21,41 +21,44 @@ int main()
 
   int id = 1;
   for (auto &pieceImg : pieceImgs) {
-		int color_i = 0;
+    int color_i = 0;
     cv::Canny(pieceImg, pieceImg, 50, 200, 3);
     auto segments = im::detectSegments(pieceImg);
     auto vertexes = im::detectVertexes(segments);
-		//BY Yoshiwatari
-		auto rolltexes = im::roll(vertexes); // <-これが1ピース当たりの回転を含めた座標を返します
-		std::cout << id << "-----" << std::endl;
-		for(auto &rolling : rolltexes){
-			std::cout << "=====" << std::endl;
-			for(auto &segment : rolling){
-				std::cout << ">> " << segment.x << "," << segment.y << std::endl;
-			}
-		}
+
+    /*
+    //BY Yoshiwatari
+    auto rolltexes = im::roll(vertexes); // <-これが1ピース当たりの回転を含めた座標を返します
+    std::cout << id << "-----" << std::endl;
+    for(auto &rolling : rolltexes){
+        std::cout << "=====" << std::endl;
+        for(auto &segment : rolling){
+            std::cout << ">> " << segment.x << "," << segment.y << std::endl;
+        }
+    }
+    */
 
     cv::cvtColor(pieceImg, pieceImg, CV_GRAY2BGR);
     for (auto &segment : segments) {
       if (abs(segment[0] - segment[2]) + abs(segment[1] - segment[3]) < 20) {
-				color_i += 20;
+        color_i += 20;
         continue;
       }
-			//端っこ表示
-			/*
-      cv::circle(pieceImg, cv::Point(segment[0], segment[1]), 5, cv::Scalar(255, 255, 255), -1, 8, 0);
-      cv::circle(pieceImg, cv::Point(segment[2], segment[3]), 5, cv::Scalar(255, 255, 255), -1, 8, 0);*/
+      //端っこ表示
+      /*
+cv::circle(pieceImg, cv::Point(segment[0], segment[1]), 5, cv::Scalar(255, 255, 255), -1, 8, 0);
+cv::circle(pieceImg, cv::Point(segment[2], segment[3]), 5, cv::Scalar(255, 255, 255), -1, 8, 0);*/
       cv::line(pieceImg, cv::Point(segment[0], segment[1]),
-        cv::Point(segment[2], segment[3]), cv::Scalar(color_i, color_i, 255), 2, 8); 
-			color_i += 20;
+        cv::Point(segment[2], segment[3]), cv::Scalar(color_i, color_i, 255), 2, 8);
+      color_i += 20;
     }
 
-		color_i = 0;
+    color_i = 0;
 
     for (auto &vertex : vertexes) {
-			if(vertex.x == -1) continue;
+      if (vertex.x == -1) continue;
       cv::circle(pieceImg, cv::Point(vertex.x, vertex.y), 5, cv::Scalar(color_i, 255, color_i), -1, 8, 0);
-			color_i += 20;
+      color_i += 20;
     }
 
     cv::namedWindow(std::to_string(id), CV_WINDOW_AUTOSIZE | CV_WINDOW_FREERATIO);

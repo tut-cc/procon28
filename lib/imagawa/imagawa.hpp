@@ -18,13 +18,13 @@ namespace im {
     int x, y;
   };
 
-	class Pointd {
+  class Pointd {
   public:
     Pointd();
     Pointd(double x, double y);
 
     double x, y;
-	};
+  };
 
   class Piece {
   public:
@@ -52,5 +52,5 @@ namespace im {
   std::vector<cv::Mat> devideImg(const cv::Mat &binaryImg);
   std::vector<cv::Vec4i> detectSegments(const cv::Mat &edgeImg);
   std::vector<Pointd> detectVertexes(const std::vector<cv::Vec4i> &segments);
-	std::vector<std::vector<im::Point>> roll(const std::vector<im::Pointd> shape);
+  std::vector<std::vector<im::Point>> roll(const std::vector<im::Pointd> shape);
 }
