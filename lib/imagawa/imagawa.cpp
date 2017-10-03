@@ -108,11 +108,8 @@ std::vector<cv::Vec4i> im::detectSegments(const cv::Mat &edgeImg) {
   // 左端点のx座標が昇順になるようソート
   std::sort(segs.begin(), segs.end(), compareSegments);
 
-  //std::cout << "kaishi" << std::endl;
   std::vector<cv::Vec4i> segments;
   for (auto i = 0; i < segs.size(); i++) {
-    std::cout << '*' << i << std::endl;
-    //std::cout << segs[i][0] << ',' << segs[i][1] << ',' << segs[i][2] << ',' << segs[i][3] << std::endl;
 
     // 短い線分を無視
     if (dist2(segs[i][0], segs[i][1], segs[i][2], segs[i][3]) < 400) {
@@ -131,8 +128,6 @@ std::vector<cv::Vec4i> im::detectSegments(const cv::Mat &edgeImg) {
         continue;
       }
 
-      std::cout << "**" << j << std::endl;
-
       // 線分2の左端点と線分1の距離(https://tgws.plus/ul/ul31.html)
       double p1q1[] = { segs[j][0] - segs[i][0], segs[j][1] - segs[i][1] };
       double p1p2[] = { segs[i][2] - segs[i][0], segs[i][3] - segs[i][1] };
@@ -143,15 +138,10 @@ std::vector<cv::Vec4i> im::detectSegments(const cv::Mat &edgeImg) {
         dot1 > abs2(p1p2) ? abs2(p2q1) :
         abs2(p1q1) - dot1 * dot1 / abs2(p1p2);
 
-      std::cout << "***" << segs[j][0] << "," << segs[j][1] << std::endl;
-      std::cout << "***" << dd << std::endl;
-
       // 距離が大きければマージしない
       if (dd > 400.0) {
         continue;
       }
-
-      std::cout << "merge!" << std::endl;
 
       // 右端点座標を更新
       if (segs[j][2] > segs[i][2]) {
@@ -166,13 +156,7 @@ std::vector<cv::Vec4i> im::detectSegments(const cv::Mat &edgeImg) {
 
     segments.push_back(segs[i]);
   }
-  //std::cout << "owari" << std::endl;
 
-  //std::cout << "hajime" << std::endl;
-  //for (auto &seg : segments) {
-  //  std::cout << seg[0] << ',' << seg[1] << ',' << seg[2] << ',' << seg[3] << std::endl;
-  //}
-  //std::cout << "end" << std::endl;
   return segments;
 }
 
