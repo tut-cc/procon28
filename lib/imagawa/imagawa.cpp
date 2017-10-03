@@ -80,23 +80,44 @@ static int dist2(int x1, int y1, int x2, int y2) {
   return (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2);
 }
 
-// 暫定仕様:重なり合っている線分はマージして返す
+static bool compareSegments(const cv::Vec4i &segment1, const cv::Vec4i &segment2) {
+  return segment1[0] < segment2[0];
+}
+
+static double dot(double v1[], double v2[]) {
+  return v1[0] * v2[0] + v1[1] * v2[1];
+}
+
+static double abs2(double v[]) {
+  return dot(v, v);
+}
+
+static double dot(const cv::Vec4i &v1, const cv::Vec4i &v2) {
+  double u1[] = { v1[2] - v1[0], v1[3] - v1[1] };
+  double u2[] = { v2[2] - v2[0], v2[3] - v2[1] };
+  return dot(u1, u2) / (std::sqrt(abs2(u1)) * std::sqrt(abs2(u2)));
+}
+
+// 重なっている線分のみマージして返す(途切れた線分のマージは行わない)
 std::vector<cv::Vec4i> im::detectSegments(const cv::Mat &edgeImg) {
 
   // 確率的ハフ変換による線分検出
   std::vector<cv::Vec4i> segs;
   cv::HoughLinesP(edgeImg, segs, 1, CV_PI / 180, 45, 30, 30);
 
+  // 左端点のx座標が昇順になるようソート
+  std::sort(segs.begin(), segs.end(), compareSegments);
+
+  //std::cout << "kaishi" << std::endl;
   std::vector<cv::Vec4i> segments;
   for (auto i = 0; i < segs.size(); i++) {
+    //std::cout << segs[i][0] << ',' << segs[i][1] << ',' << segs[i][2] << ',' << segs[i][3] << std::endl;
 
     // 短い線分を無視
     if (dist2(segs[i][0], segs[i][1], segs[i][2], segs[i][3]) < 400) {
       continue;
     }
 
-    auto slope1 = (double)(segs[i][1] - segs[i][3]) / (segs[i][0] - segs[i][2]);
-    auto merged = false;
     for (auto j = i + 1; j < segs.size(); j++) {
 
       // 短い線分を無視
@@ -105,34 +126,45 @@ std::vector<cv::Vec4i> im::detectSegments(const cv::Mat &edgeImg) {
       }
 
       // 傾きに差があればマージしない
-      auto slope2 = (double)(segs[j][1] - segs[j][3]) / (segs[j][0] - segs[j][2]);
-      if (abs(slope1 - slope2) > 0.1) {
+      if (std::abs(dot(segs[i], segs[j])) < 0.9) {
         continue;
       }
 
-      // TODO 線分間の距離
-      /*
-      for (auto k = 0; k < 2; k++) {
-      for (auto l = 0; l < 2; l++) {
-      if (dist2(segs[i][k * 2], segs[i][k * 2 + 1], segs[j][l * 2], segs[j][l * 2 + 1]) >= 400) {
-      continue;
+      // 線分2の左端点と線分1の距離(https://tgws.plus/ul/ul31.html)
+      double p1q1[] = { segs[j][0] - segs[i][0], segs[j][1] - segs[i][1] };
+      double p1p2[] = { segs[i][2] - segs[i][0], segs[i][3] - segs[i][1] };
+      double p2q1[] = { segs[j][0] - segs[i][2], segs[j][1] - segs[i][3] };
+      auto dot1 = dot(p1q1, p1p2);
+      auto dd =
+        dot1 < 0.0 ? abs2(p1q1) :
+        dot1 > abs2(p1p2) ? abs2(p2q1) :
+        abs2(p1q1) - dot1 / abs2(p1p2);
+
+      // 距離が大きければマージしない
+      if (dd > 400.0) {
+        continue;
       }
 
-      merged = true;
-      segs[j][(1 - l) * 2] = segs[i][k * 2];
-      segs[j][(1 - l) * 2 + 1] = segs[i][k * 2 + 1];
-      goto PUSH;
+      // 右端点座標を更新
+      if (segs[j][2] > segs[i][2]) {
+        segs[i][2] = segs[j][2];
+        segs[i][3] = segs[j][3];
       }
-      }
-      */
+
+      // 取り込まれた線分の長さを0にする(フラグ代わり)
+      segs[j][2] = segs[j][0];
+      segs[j][3] = segs[j][1];
     }
 
-  PUSH:
-    if (!merged) {
-      segments.push_back(segs[i]);
-    }
+    segments.push_back(segs[i]);
   }
+  //std::cout << "owari" << std::endl;
 
+  //std::cout << "hajime" << std::endl;
+  //for (auto &seg : segments) {
+  //  std::cout << seg[0] << ',' << seg[1] << ',' << seg[2] << ',' << seg[3] << std::endl;
+  //}
+  //std::cout << "end" << std::endl;
   return segments;
 }
 
