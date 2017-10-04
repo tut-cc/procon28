@@ -26,7 +26,7 @@ int main()
     cv::Canny(pieceImg, pieceImg, 50, 200, 3);
     auto segments = im::detectSegments(pieceImg);
     auto vertexes = im::detectVertexes(segments);
-    std::cout << segments.size() << std::endl;
+    std::cout << segments.size() << ":" << vertexes.size() << std::endl;
     /*
     //BY Yoshiwatari
     auto rolltexes = im::roll(vertexes); // <-これが1ピース当たりの回転を含めた座標を返します
@@ -49,14 +49,14 @@ int main()
       cv::line(pieceImg, cv::Point(segment[0], segment[1]),
         cv::Point(segment[2], segment[3]), cv::Scalar(color_i, color_i, 255), 2, 8);
     }
-
-    /*
+    
     for (auto &vertex : vertexes) {
       if (vertex.x == -1) continue;
       cv::circle(pieceImg, cv::Point(vertex.x, vertex.y), 5, cv::Scalar(color_i, 255, color_i), -1, 8, 0);
       color_i += 20;
-    }*/
+    }
 
+    cv::resize(pieceImg, pieceImg, cv::Size(), 0.5, 0.5);
     cv::namedWindow(std::to_string(id), CV_WINDOW_AUTOSIZE | CV_WINDOW_FREERATIO);
     cv::imshow(std::to_string(id), pieceImg);
     id++;

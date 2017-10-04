@@ -160,98 +160,96 @@ std::vector<cv::Vec4i> im::detectSegments(const cv::Mat &edgeImg) {
   return segments;
 }
 
-im::Pointd getpoint(cv::Vec4i v1_o, cv::Vec4i v2_o) {
-  //2つの辺の交点を求める
-  /*
-  0:start x
-  1:start y
-  2:end   x
-  3:end   y
-   */
+// 2線分を延長したときの交点
+im::Pointd intersection(const cv::Vec4i &v1, const cv::Vec4i &v2) {
 
-  const int SLO = 10; //
-  std::vector<double> v1(4);
-  std::vector<double> v2(4);
-  for (int i = 0; i < 4; i++) {
-    v1[i] = v1_o[i];
-    v2[i] = v2_o[i];
+  // 傾きが等しいときは大きい値を返す
+  if (std::abs(dot(v1, v2)) >= 0.9995) {
+    return im::Pointd(1.0e9, 1.0e9);
   }
-  if (v1[2] - v1[0] == 0) v1[2] += 0.001; //傾き無限大対策(応急処置)
-  double a = (v1[3] - v1[1]) / (v1[2] - v1[0]);
-  double b = v1[1] - a* v1[0];
-  if (v2[2] - v2[0] == 0) v2[2] += 0.001; //傾き無限大対策(応急処置)
-  double c = (v2[3] - v2[1]) / (v2[2] - v2[0]);
-  double d = v2[1] - c* v2[0];
-  //if(a == c) c+=1; //応急処置
 
-    //傾きが一緒ならば省略
-  if ((a - c)*(a - c) < SLO) return im::Pointd(-1, -1);
-  double x = (d - b) / (a - c);
-  double y = a* x + b;
+  auto a1 = (v1[3] - v1[1]) / (v1[2] - v1[0] != 0 ? v1[2] - v1[0] : 1.0e-9);
+  auto b1 = v1[1] - a1 * v1[0];
+  auto a2 = (v2[3] - v2[1]) / (v2[2] - v2[0] != 0 ? v2[2] - v2[0] : 1.0e-9);
+  auto b2 = v2[1] - a2 * v2[0];
 
-  return im::Pointd(x, y);
+  im::Pointd inter;
+  inter.x = -(b1 - b2) / (a1 - a2);
+  inter.y = a1 * inter.x + b1;
+
+  return inter;
 }
 
-double getdis(cv::Vec4i v1, cv::Vec4i v2, im::Pointd vp) {
-  //各線分のいずれかの端っこからの距離を測定
+static double dist2(double x1, double y1, double x2, double y2) {
+  return (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2);
+}
 
-  /*int midy1 = abs(v1[1]-v1[3])/2;
-  int midx1 = abs(v1[0]-v1[2])/2;*/
-  double midy1 = (double)v1[1];
-  double midx1 = (double)v1[0];
-  double midy2 = (double)v1[3];
-  double midx2 = (double)v1[2];
-  /*pair<double, double> middle1 = make_pair(midx1, midy1);
-    pair<double, double> middle2 = make_pair(midx2, midy2); */
+static double dist2(const cv::Vec4i &v, const im::Pointd &p, int lr) {
+  return dist2((double)v[lr * 2 - 2], (double)v[lr * 2 - 1], p.x, p.y);
+}
 
-  double dy1 = midy1 - vp.y;
-  double dy2 = midy2 - vp.y;
-  double dx1 = midx1 - vp.x;
-  double dx2 = midx2 - vp.x;
-
-  double dis1 = sqrt(dx1*dx1 + dy1*dy1);
-  double dis2 = sqrt(dx2*dx2 + dy2*dy2);
-
-  return std::min(dis1, dis2);
+static int nearLR(const cv::Vec4i &v, const im::Pointd &p) {
+  return dist2(v, p, 1) < dist2(v, p, 2) ? 1 : 2;
 }
 
 std::vector<im::Pointd> im::detectVertexes(const std::vector<cv::Vec4i> &segments) {
-  /*
-  vps_whouse
-  vps
-  getpoint
-  getdis
-  */
-  int i = 0;
-  int vsize = segments.size(); //辺数
-  std::vector<double> dises;
-  std::vector<im::Pointd> vps_whouse; //交点の仮置き場
-  std::vector<im::Pointd> vps;
 
-  for (cv::Vec4i vecs : segments) { //辺1つを取得 [基準辺]
-    im::Pointd vp;
-    for (int j = 0; j < vsize; j++) { //別の辺を取得(ダブり) [比較辺]
-      if (i == j) continue;
-      vp = getpoint(vecs, segments[j]);
-      double dis = getdis(vecs, segments[j], vp);
-      vps_whouse.push_back(vp);
-      dises.push_back(dis);
-    }
-    if (vps_whouse.size() == 0) break;
-    //最小値を求める
-    std::vector<double>::iterator min_dis = std::min_element(dises.begin(), dises.end());
-    int index = distance(dises.begin(), min_dis);
-    vps.push_back(vps_whouse[index]);
-    vps_whouse.clear();
-    vps_whouse.shrink_to_fit();
-    dises.clear();
-    dises.shrink_to_fit();
-    i++; //次の基準辺へ
-    //if(i==4) break; //!!!デバッグ用　消すこと!!!
+  // 線分の交点リスト
+  std::vector<std::vector<Pointd>> inters(segments.size());
+  for (auto &inter : inters) {
+    inter.resize(segments.size(), im::Pointd(1.0e9, 1.0e9));
   }
 
-  return vps;
+  for (auto i = 0; i < segments.size(); i++) {
+    for (auto j = i + 1; j < segments.size(); j++) {
+      inters[i][j] = intersection(segments[i], segments[j]);
+    }
+  }
+
+  std::vector<Pointd> vertexes;
+  std::vector<int> xFlgs(segments.size(), 0);
+  for (auto i = 0; i < segments.size() - 1; i++) {
+
+    auto skipJ = i;
+    for (auto lr = 1; lr <= 2; lr++) {
+
+      // 線分左/右側の交点が未決定のとき
+      if (~xFlgs[i] & lr) {
+
+        // 端点との距離が最も小さくなる交点を見つける
+        auto minD2 = 1.0e9;
+        auto minJ = i;
+        auto minNLR = 1;
+        for (auto j = i + 1; j < segments.size(); j++) {
+          if (j == skipJ) {
+            continue;
+          }
+
+          auto nLR = nearLR(segments[j], inters[i][j]);
+          auto d2 = dist2(segments[i], inters[i][j], lr) + dist2(segments[j], inters[i][j], nLR);
+          if (d2 < minD2) {
+            minD2 = d2;
+            minJ = j;
+            minNLR = nLR;
+          }
+        }
+
+        // 確定済みだった場合segments[i]は途切れ線だったと判定し切り捨てる
+        if (xFlgs[minJ] & minNLR || minD2 >= 1.0e9) {
+          std::cout << "avava:" << i << ":" << minJ << std::endl;
+          break;
+        }
+
+        xFlgs[minJ] |= minNLR;
+        vertexes.push_back(inters[i][minJ]);
+        skipJ = minJ;
+      }
+    }
+  }
+
+  return vertexes;
 }
+
 /*
 ######################################################################
 information about shape
