@@ -22,9 +22,13 @@ struct State {
   cl::Paths waku;
   cl::Paths uni;
   Info info;
+  int bornus;
+  int edges;
 
-  State(const cl::Paths& waku, const cl::Paths& uni = cl::Paths(), const Info& info = Info())
-      : waku(waku), uni(uni), info(info) {}
+  State(const cl::Paths& waku, const cl::Paths& uni = cl::Paths(), const Info& info = Info(),
+      int bornus = 0, int edges = 0)
+      : waku(waku), uni(uni), info(info),
+        bornus(bornus), edges(edges) {}
 };
 
 static cl::Paths piece2paths(const im::Piece& piece)
@@ -93,7 +97,7 @@ class MatsuriCompare
 {
 public:
   // vsの優先度が高ければtrueを返す
-  bool operator() (State atom, State vs)
+  bool operator() (State vs, State atom)
   {
     // 全消しを優先
     if (vs.waku.size() == 0) {
@@ -102,7 +106,16 @@ public:
     if (atom.waku.size() == 0) {
       return false;
     }
-    // 角数が少ない方を優先
+    // bornus が多い方を優先
+    if (vs.bornus != atom.bornus) {
+      return vs.bornus < atom.bornus;
+    }
+    // 角数が少なくなっている方を優先
+    if (vs.uni.size() && atom.uni.size()) {
+      if (vs.edges - vs.uni.front().size() != atom.edges - atom.uni.front().size()) {
+        return vs.edges - vs.uni.front().size() < atom.edges - atom.uni.front().size();
+      }
+    }
     if (vs.waku.front().size() != atom.waku.front().size()) {
       return vs.waku.front().size() < atom.waku.front().size();
     }
@@ -142,7 +155,7 @@ static void test_degree()
   }
 }
 
-static std::pair<bool, cl::Paths> cut_waku(const cl::Paths& waku, const cl::Path& path)
+static auto cut_waku(const cl::Paths& waku, const cl::Path& path)
 {
   // waku から path を削り取る
   cl::Clipper clipper;
@@ -160,10 +173,43 @@ static std::pair<bool, cl::Paths> cut_waku(const cl::Paths& waku, const cl::Path
     dame |= std::abs(cl::Area(next_waku[1])) > 15;
     next_waku.erase(next_waku.begin() + 1, next_waku.end());
   }
-  return std::pair<bool, cl::Paths>(dame, next_waku);
+  // ぴったりハマるところがあればボーナスとしてカウント
+  int count = 0;
+  if (waku.size()) {
+    std::set<std::vector<std::pair<cl::cInt, cl::cInt>>> set;
+    for (int i = 0; i < path.size(); ++i) {
+      auto left = path[i];
+      auto right = path[(i + 1) % path.size()];
+      auto lp = std::make_pair(left.X, left.Y);
+      auto rp = std::make_pair(right.X, right.Y);
+      if (lp > rp) {
+        std::swap(lp, rp);
+      }
+      std::vector<std::pair<cl::cInt, cl::cInt>> vec(2);
+      vec.push_back(lp);
+      vec.push_back(rp);
+      set.insert(vec);
+    }
+    for (int i = 0; i < waku.front().size(); ++i) {
+      auto left = waku.front()[i];
+      auto right = waku.front()[(i + 1) % waku.front().size()];
+      auto lp = std::make_pair(left.X, left.Y);
+      auto rp = std::make_pair(right.X, right.Y);
+      if (lp > rp) {
+        std::swap(lp, rp);
+      }
+      std::vector<std::pair<cl::cInt, cl::cInt>> vec(2);
+      vec.push_back(lp);
+      vec.push_back(rp);
+      if (set.count(vec)) {
+        ++count;
+      }
+    }
+  }
+  return std::tuple <bool, int, cl::Paths>(dame, count, next_waku);
 }
 
-static std::pair<bool, cl::Paths> patch_uni(const cl::Paths& uni, const cl::Path& path)
+static auto patch_uni(const cl::Paths& uni, const cl::Path& path)
 {
   // uni に path を追加する
   cl::Clipper unioner;
@@ -201,7 +247,40 @@ static std::pair<bool, cl::Paths> patch_uni(const cl::Paths& uni, const cl::Path
     // 誤差を考え、面積15以下は許容する。
     dame |= std::abs(cl::Area(v)) > 15;
   }
-  return std::pair<bool, cl::Paths>(dame, next_uni);
+  // ぴったりハマるところがあればボーナスとしてカウント
+  int count = 0;
+  if (uni.size()) {
+    std::set<std::vector<std::pair<cl::cInt, cl::cInt>>> set;
+    for (int i = 0; i < path.size(); ++i) {
+      auto left = path[i];
+      auto right = path[(i + 1) % path.size()];
+      auto lp = std::make_pair(left.X, left.Y);
+      auto rp = std::make_pair(right.X, right.Y);
+      if (lp > rp) {
+        std::swap(lp, rp);
+      }
+      std::vector<std::pair<cl::cInt, cl::cInt>> vec(2);
+      vec.push_back(lp);
+      vec.push_back(rp);
+      set.insert(vec);
+    }
+    for (int i = 0; i < uni.front().size(); ++i) {
+      auto left = uni.front()[i];
+      auto right = uni.front()[(i + 1) % uni.front().size()];
+      auto lp = std::make_pair(left.X, left.Y);
+      auto rp = std::make_pair(right.X, right.Y);
+      if (lp > rp) {
+        std::swap(lp, rp);
+      }
+      std::vector<std::pair<cl::cInt, cl::cInt>> vec(2);
+      vec.push_back(lp);
+      vec.push_back(rp);
+      if (set.count(vec)) {
+        ++count;
+      }
+    }
+  }
+  return std::tuple<bool, int, cl::Paths>(dame, count, next_uni);
 }
 
 #include <opencv2/core/core.hpp>
@@ -221,6 +300,9 @@ static cv::Scalar uint2scalar(unsigned int _color)
 
 static void DrawPolygons(const cl::Paths& _paths, unsigned int fill_color, unsigned int line_color)
 {
+  if (_paths.size() == 0) {
+    std::cerr << "nothing to draw" << std::endl;
+  }
   cv::Mat img = cv::Mat::zeros(cv::Size(300, 300), CV_8UC4);
   std::vector<std::vector<cv::Point>> paths;
   std::vector<int> npts;
@@ -283,23 +365,30 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
   int count = 0;
   std::set<std::vector<im::Point>, PointVecCompare> done;
   done.insert(atom.info.haiti);
+  bool end = false;
   for (int g = 0;; ++g) {
     std::cerr << "---- " << g << " GENERATION ----" << std::endl;
     for (int i = 0; i <= n; ++i) {
       if (stacks[i].size() == 0) {
         continue;
       }
-      std::cerr << "[" << i << "]" << std::endl;
       State node = stacks[i].top();
+      const int uni_size = node.uni.size() == 0 ? 0 : node.uni.front().size();
+      const double waku_area = node.waku.size() == 0 ? 0 : std::abs(cl::Area(node.waku.front()));
+      std::cerr << "[" << i << "] : " << node.bornus << ", " << node.edges << " - " << uni_size
+        << " = " << node.edges - uni_size << " ... " << waku_area << std::endl;
       double score = node.waku.size() == 0 ? 0 : std::abs(cl::Area(node.waku.front()));
       if (best_score > score) {
         best_score = score;
         best_info = node.info;
         ++count;
         std::cerr << "(" << count << ") best score is renewed! : " << best_score << " at " << i << std::endl;
-        if (count % 10 == 0) {
-          DrawPolygons(node.waku, 0x160000FF, 0x600000FF); //blue
-          DrawPolygons(node.uni, 0x20FFFF00, 0x30FF0000); //orange
+        if (count % 10 == 0 || i == n) {
+          //DrawPolygons(node.waku, 0x160000FF, 0x600000FF); //blue
+          //DrawPolygons(node.uni, 0x20FFFF00, 0x30FF0000); //orange
+        }
+        if (score < 1e-6) {
+          end = true;
         }
       }
       stacks[i].pop();
@@ -332,18 +421,19 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
             }
             bool dame = false;
             auto ret_waku = cut_waku(node.waku, zurasied_path);
-            dame |= ret_waku.first;
+            dame |= std::get<0>(ret_waku);
             auto ret_uni = patch_uni(node.uni, zurasied_path);
-            dame |= ret_uni.first;
+            dame |= std::get<0>(ret_uni);
             if (dame) {
               continue;
             }
-            auto next_waku = ret_waku.second;
-            auto next_uni = ret_uni.second;
+            auto bornus = std::get<1>(ret_waku) + std::get<1>(ret_uni);
+            auto next_waku = std::get<2>(ret_waku);
+            auto next_uni = std::get<2>(ret_uni);
             auto next_haiti = node.info.haiti;
             next_haiti[j] = im::Point(x, y);
             Info next_info(next_set, next_haiti);
-            State next(next_waku, next_uni, next_info);
+            State next(next_waku, next_uni, next_info, node.bornus + bornus,  node.edges + path.size());
             if (done.count(next_haiti) > 0) {
               continue;
             }
@@ -361,6 +451,12 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
         //std::cerr << "\t\t" << awawa << " transed to next" << std::endl;
       }
     }
+    if (end) {
+      break;
+    }
+  }
+  for (int i = 0; i < problem.size(); ++i) {
+    std::cerr << "(" << i << ") [" << (best_info.set[i] ? "x" : " ") << "] : " << best_info.haiti[i].x << " " << best_info.haiti[i].y << std::endl;
   }
   return std::vector<im::Answer>();
 }
