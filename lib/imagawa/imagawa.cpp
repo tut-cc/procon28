@@ -11,7 +11,7 @@
 
 #define PI 3.14159265
 #define DP 180/PI
-#define derror 0.00001
+#define derror 0.45
 
 
 im::Point::Point() : Point(0, 0) {}
@@ -262,13 +262,13 @@ N:na xa1 ya1 xa2 ya2 ... xana yana:nb xb1 yb1 xb2 yb2 ...xbna ybna:...
 
 std::vector<std::vector<im::Point>> im::roll(std::vector<cv::Vec4i> segments, std::vector<im::Pointd> shape) {
   //Transfer [pix -> mm]
-  double ratio = 55 / (512 * 2.5); //[(mm/pix/mm)]
-  //double ratio = 1; //[(mm/pix/mm)]
+  //double ratio = 55 / (512 * 2.5); //[(mm/pix/mm)]
+  double ratio = 55 / (512 * 1.0); //[(mm/pix/mm)]
+  //double ratio = 1.0; //[(mm/pix/mm)]
   std::cout << "-----" << std::endl;
   for (im::Pointd &xy : shape) {
     xy.x *= ratio;
     xy.y *= ratio;
-		std::cout << "xy.x:" <<  xy.x << std::endl;
     //std::cout << xy.x << "," << xy.y << std::endl;
   }
 
@@ -292,7 +292,7 @@ std::vector<std::vector<im::Point>> im::roll(std::vector<cv::Vec4i> segments, st
 		cv::Vec4i side = segments[corn];
 		double dx = side[2]-side[0];
 		double dy = side[3]-side[1];
-		len_side[corn] = sqrt(dx*dx+dy*dy);
+		len_side[corn] = sqrt(dx*dx+dy*dy)*ratio;
 	}
 	
 
@@ -305,13 +305,19 @@ std::vector<std::vector<im::Point>> im::roll(std::vector<cv::Vec4i> segments, st
   1. A point isn't at any grids.
   */
 
-  double dy0 = shape[1].y - shape[0].y;
-	std::cout << "dy0:" << dy0 << std::endl;
+	//std::cout << "dy0:" << shape[0].y << "," << shape[1].y << std::endl;
+  double dy0 = (shape[1].y - shape[0].y);
+	//std::cout << "dy0:" << dy0 << std::endl;
   double theta0 = 0;
+	//std::cout << "len_side[0]:" << len_side[0] << std::endl;
   if (dy0 != 0) {
-		std::cout << "len_side[0]:" << len_side[0] << std::endl;
-    theta0 = acos(dy0 / len_side[0]);
-		std::cout << "theta0:" << theta0 << std::endl;
+		if(std::abs(dy0) <= len_side[0])
+    	theta0 = acos(dy0 / len_side[0]);
+		else if(dy0 > 0)
+			theta0 = acos(1);
+		else if(dy0 < 0)
+			theta0 = acos(-1);
+		//std::cout << "theta0:" << theta0 << std::endl;
     //cout << len_side[0] << endl;
   }
   else {
@@ -321,10 +327,12 @@ std::vector<std::vector<im::Point>> im::roll(std::vector<cv::Vec4i> segments, st
   for (double dy = (int)len_side[0]; dy <= len_side[0] && theta <= PI / 4; dy--) {
     //(dx!=0) ? theta = asin(dx/len_side[0]) : theta = 0;
     theta = acos(dy / len_side[0]);
-		std::cout << "theta1:" << theta << std::endl;
+		//std::cout << "theta1:" << theta << std::endl;
     dtheta = theta0 - theta;
-		std::cout << "theta2:" << theta << std::endl;
+		//std::cout << "theta2:" << theta << std::endl;
     //cout << theta0*DP << ":" << theta*DP << ":" << dtheta*DP << endl;
+		int minX = 1.0e9;
+		int minY = 1.0e9;
     for (int corn = 0; corn < len_corn; corn++) {
       //Rotation matrix
       double x =
@@ -333,21 +341,28 @@ std::vector<std::vector<im::Point>> im::roll(std::vector<cv::Vec4i> segments, st
       double y =
         (shape[corn].x - shape[0].x)*sin(dtheta) +
         (shape[corn].y - shape[0].y)*cos(dtheta);
-			std::cout << "x1:" << x << std::endl;
-      /*cout << x << "," << y << endl;
-      cout << ceil(x) << "," << ceil(y) << endl;
-      cout << floor(x) << "," << floor(y) << endl;*/
+			//std::cout << "x1:" << x << std::endl;
       bool flagx = false;
       bool flagy = false;
-      if (abs(floor(x) - x) < derror) { x = floor(x); flagx = true; }
-      if (abs(floor(y) - y) < derror) { y = floor(y); flagy = true; }
-      if (abs(ceil(x) - x) < derror) { x = ceil(x); flagx = true; }
-      if (abs(ceil(y) - y) < derror) { y = ceil(y); flagy = true; }
-			std::cout << "x2:" << x << std::endl;
-      if (flagx && flagy) tmp_res[corn] = im::Point(x, y);
+			//std::cout << x << "," << y << std::endl;
+      if (std::abs(floor(x) - x) < derror) { x = floor(x); flagx = true; }
+      if (std::abs(floor(y) - y) < derror) { y = floor(y); flagy = true; }
+      if (std::abs(ceil(x) - x) < derror) { x = ceil(x); flagx = true; }
+      if (std::abs(ceil(y) - y) < derror) { y = ceil(y); flagy = true; }
+			//std::cout << "x2:" << x << std::endl;
+      if (flagx && flagy){
+				if(x < minX) minX = x;
+				if(y < minY) minY = y;
+				tmp_res[corn] = im::Point(x, y);
+				//std::cout << "res:" << x << "," << y << std::endl;
+			}
       else break;
 
       if (corn == len_corn - 1) {
+				for(auto &xy:tmp_res){
+					if(minX<0) xy.x -= minX;
+					if(minY<0) xy.y -= minY;
+				}
         result.push_back(tmp_res);
       }
     }
