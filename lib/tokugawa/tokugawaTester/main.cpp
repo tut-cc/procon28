@@ -167,5 +167,10 @@ int main()
 
   auto ans = tk::search(waku, problem, std::vector<im::Answer>(), 0);
 
+  std::cerr << "==============" << std::endl;
+  for (int i = 0; i < offsets.size(); ++i) {
+    std::cerr << "(" << i << ") : " << offsets[i].x << " " << offsets[i].y << std::endl;
+  }
+
   return 0;
 }
