@@ -10,6 +10,7 @@ add_library(tokugawa STATIC tokugawa.cpp matsuri/matsuri.cpp)
 
 target_link_libraries(tokugawa imagawa)
 target_link_libraries(tokugawa ${OPENCV_LIBS})
+target_link_libraries( tokugawa polyclipping )
 
 install(TARGETS tokugawa ARCHIVE DESTINATION ${CMAKE_SOURCE_DIR}/lib)
 install(FILES tokugawa.hpp DESTINATION ${CMAKE_SOURCE_DIR}/include)

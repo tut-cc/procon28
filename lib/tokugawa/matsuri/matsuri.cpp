@@ -2,6 +2,8 @@
 #include "polyclipping/clipper.hpp"
 
 #include <bitset>
+#include <cmath>
+#include <fstream>
 
 const int MAX_NUM_OF_PEICES = 50;
 const int TATE = 65;
