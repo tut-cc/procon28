@@ -11,7 +11,7 @@
 
 #define PI 3.14159265
 #define DP 180/PI
-#define derror 0.45
+#define derror 0.5
 
 
 im::Point::Point() : Point(0, 0) {}
@@ -262,8 +262,8 @@ N:na xa1 ya1 xa2 ya2 ... xana yana:nb xb1 yb1 xb2 yb2 ...xbna ybna:...
 
 std::vector<std::vector<im::Point>> im::roll(std::vector<cv::Vec4i> segments, std::vector<im::Pointd> shape) {
   //Transfer [pix -> mm]
-  //double ratio = 55 / (512 * 2.5); //[(mm/pix/mm)]
-  double ratio = 55 / (512 * 1.0); //[(mm/pix/mm)]
+  double ratio = 55 / (512 * 2.5); //[(mm/pix/mm)]
+  //double ratio = 55 / (512 * 1.0); //[(mm/pix/mm)]
   //double ratio = 1.0; //[(mm/pix/mm)]
   std::cout << "-----" << std::endl;
   for (im::Pointd &xy : shape) {
