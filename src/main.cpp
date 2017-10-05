@@ -27,9 +27,8 @@ int main()
     auto segments = im::detectSegments(pieceImg);
     auto vertexes = im::detectVertexes(segments);
     std::cout << segments.size() << ":" << vertexes.size() << std::endl;
-    /*
     //BY Yoshiwatari
-    auto rolltexes = im::roll(vertexes); // <-これが1ピース当たりの回転を含めた座標を返します
+    auto rolltexes = im::roll(segments, vertexes); // <-これが1ピース当たりの回転を含めた座標を返します
     std::cout << id << "-----" << std::endl;
     for(auto &rolling : rolltexes){
         std::cout << "=====" << std::endl;
@@ -37,7 +36,6 @@ int main()
             std::cout << ">> " << segment.x << "," << segment.y << std::endl;
         }
     }
-    */
 
     cv::cvtColor(pieceImg, pieceImg, CV_GRAY2BGR);
     for (auto &segment : segments) {

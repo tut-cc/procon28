@@ -260,7 +260,7 @@ N:na xa1 ya1 xa2 ya2 ... xana yana:nb xb1 yb1 xb2 yb2 ...xbna ybna:...
 //For the time being, coordinates is written by [mm]
 
 
-std::vector<std::vector<im::Point>> im::roll(std::vector<im::Pointd> shape) {
+std::vector<std::vector<im::Point>> im::roll(std::vector<cv::Vec4i> segments, std::vector<im::Pointd> shape) {
   //Transfer [pix -> mm]
   double ratio = 55 / (512 * 2.5); //[(mm/pix/mm)]
   //double ratio = 1; //[(mm/pix/mm)]
@@ -268,6 +268,7 @@ std::vector<std::vector<im::Point>> im::roll(std::vector<im::Pointd> shape) {
   for (im::Pointd &xy : shape) {
     xy.x *= ratio;
     xy.y *= ratio;
+		std::cout << "xy.x:" <<  xy.x << std::endl;
     //std::cout << xy.x << "," << xy.y << std::endl;
   }
 
@@ -276,13 +277,24 @@ std::vector<std::vector<im::Point>> im::roll(std::vector<im::Pointd> shape) {
   std::vector<im::Point> tmp_res(len_corn, im::Point(0, 0));
   std::vector<std::vector<im::Point>> result;
 
+	//WARNING!
+	/*
   for (int corn = 0; corn < len_corn; corn++) {
-    int dx = shape[corn].x
+    double dx = shape[corn].x
       - shape[(corn < len_corn - 1) ? corn + 1 : 0].x;
-    int dy = shape[corn].y
+    double dy = shape[corn].y
       - shape[(corn < len_corn - 1) ? corn + 1 : 0].y;
+		std::cout << "dx:" << dx << std::endl;
     len_side[corn] = sqrt(dx*dx + dy*dy);
   }
+	*/
+	for(int corn = 0; corn < segments.size(); corn++){
+		cv::Vec4i side = segments[corn];
+		double dx = side[2]-side[0];
+		double dy = side[3]-side[1];
+		len_side[corn] = sqrt(dx*dx+dy*dy);
+	}
+	
 
   /*
   >>terms to stop<<
@@ -294,9 +306,12 @@ std::vector<std::vector<im::Point>> im::roll(std::vector<im::Pointd> shape) {
   */
 
   double dy0 = shape[1].y - shape[0].y;
+	std::cout << "dy0:" << dy0 << std::endl;
   double theta0 = 0;
   if (dy0 != 0) {
+		std::cout << "len_side[0]:" << len_side[0] << std::endl;
     theta0 = acos(dy0 / len_side[0]);
+		std::cout << "theta0:" << theta0 << std::endl;
     //cout << len_side[0] << endl;
   }
   else {
@@ -306,7 +321,9 @@ std::vector<std::vector<im::Point>> im::roll(std::vector<im::Pointd> shape) {
   for (double dy = (int)len_side[0]; dy <= len_side[0] && theta <= PI / 4; dy--) {
     //(dx!=0) ? theta = asin(dx/len_side[0]) : theta = 0;
     theta = acos(dy / len_side[0]);
+		std::cout << "theta1:" << theta << std::endl;
     dtheta = theta0 - theta;
+		std::cout << "theta2:" << theta << std::endl;
     //cout << theta0*DP << ":" << theta*DP << ":" << dtheta*DP << endl;
     for (int corn = 0; corn < len_corn; corn++) {
       //Rotation matrix
@@ -316,6 +333,7 @@ std::vector<std::vector<im::Point>> im::roll(std::vector<im::Pointd> shape) {
       double y =
         (shape[corn].x - shape[0].x)*sin(dtheta) +
         (shape[corn].y - shape[0].y)*cos(dtheta);
+			std::cout << "x1:" << x << std::endl;
       /*cout << x << "," << y << endl;
       cout << ceil(x) << "," << ceil(y) << endl;
       cout << floor(x) << "," << floor(y) << endl;*/
@@ -325,6 +343,7 @@ std::vector<std::vector<im::Point>> im::roll(std::vector<im::Pointd> shape) {
       if (abs(floor(y) - y) < derror) { y = floor(y); flagy = true; }
       if (abs(ceil(x) - x) < derror) { x = ceil(x); flagx = true; }
       if (abs(ceil(y) - y) < derror) { y = ceil(y); flagy = true; }
+			std::cout << "x2:" << x << std::endl;
       if (flagx && flagy) tmp_res[corn] = im::Point(x, y);
       else break;
 

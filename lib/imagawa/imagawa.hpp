@@ -52,5 +52,5 @@ namespace im {
   std::vector<cv::Mat> devideImg(const cv::Mat &binaryImg);
   std::vector<cv::Vec4i> detectSegments(const cv::Mat &edgeImg);
   std::vector<Pointd> detectVertexes(const std::vector<cv::Vec4i> &segments);
-  std::vector<std::vector<im::Point>> roll(const std::vector<im::Pointd> shape);
+  std::vector<std::vector<im::Point>> roll(const std::vector<cv::Vec4i> segments, const std::vector<im::Pointd> shape);
 }
