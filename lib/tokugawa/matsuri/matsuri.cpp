@@ -402,8 +402,19 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
         next_set[j] = true;
         int awawa = 0;
         // pathsを当てはめる
-        for (int x = 0; x < YOKO; ++x) {
-          for (int y = 0; y < TATE; ++y) {
+        std::set<std::pair<int, int>> targets;
+        for (const auto& wp : node.waku.front()) {
+          for (const auto &pp : paths[j]) {
+            int x = wp.X - pp.X;
+            int y = wp.Y - pp.Y;
+            targets.insert(std::make_pair(x, y));
+          }
+        }
+        for (const auto& p : targets) {
+          const int x = p.first;
+          const int y = p.second;
+          //for (int x = 0; x < YOKO; ++x) {
+            //for (int y = 0; y < TATE; ++y) {
             const auto& path = paths[j];
             // はみ出しがある配置ならNG
             bool ok = true;
@@ -446,7 +457,8 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
             //DrawPolygons(node.waku, 0x160000FF, 0x600000FF); //blue
             //DrawPolygons(tmp, 0x20FFFF00, 0x30FF0000); //orange
             //DrawPolygons(next_waku, 0x3000FF00, 0xFF006600); //solution shaded green
-          }
+          //}
+        //}
         }
         //std::cerr << "\t\t" << awawa << " transed to next" << std::endl;
       }
