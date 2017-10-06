@@ -18,15 +18,16 @@
     <ClInclude Include="tokugawa.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="matsuri\matsuri.hpp">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="tokugawa.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="tokugawa.def">
+    <ClCompile Include="matsuri\matsuri.cpp">
       <Filter>ソース ファイル</Filter>
-    </None>
+    </ClCompile>
   </ItemGroup>
 </Project>
