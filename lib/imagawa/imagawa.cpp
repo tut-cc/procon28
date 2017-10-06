@@ -22,10 +22,14 @@ im::Pointd::Pointd() : Pointd(0, 0) {}
 
 im::Pointd::Pointd(double x, double y) : x(x), y(y) {}
 
-im::Piece::Piece() : Piece(0, {}, {}, {}) {}
+im::Piece::Piece() : Piece(0, {}) {}
 
+/*
 im::Piece::Piece(int id, const std::vector<im::Point> &vertexes, const std::vector<int> &edges2,
   const std::vector<double> &degs) : id(id), vertexes(vertexes), edges2(edges2), degs(degs) {}
+*/
+im::Piece::Piece(int id, const std::vector<std::vector<im::Point>> &vertexes) 
+	: id(id), vertexes(vertexes) {}
 
 im::Answer::Answer() : Answer(0, {}) {}
 
@@ -322,8 +326,9 @@ N:na xa1 ya1 xa2 ya2 ... xana yana:nb xb1 yb1 xb2 yb2 ...xbna ybna:...
 
 //For the time being, coordinates is written by [mm]
 
-
-std::vector<std::vector<im::Point>> im::roll(std::vector<cv::Vec4i> segments, std::vector<im::Pointd> shape) {
+//rollの戻り値確認
+im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
+	im::Piece piece;
   //Transfer [pix -> mm]
   double ratio = 55 / (512 * 2.5); //[(mm/pix/mm)]
   //double ratio = 55 / (512 * 1.0); //[(mm/pix/mm)]
@@ -430,6 +435,8 @@ std::vector<std::vector<im::Point>> im::roll(std::vector<cv::Vec4i> segments, st
       }
     }
   }
+	piece.id = id;
+	piece.vertexes = result;
 
-  return result;
+  return piece;
 }
