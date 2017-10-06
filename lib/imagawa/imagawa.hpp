@@ -65,9 +65,9 @@ namespace im {
 
   class Hint {
     Hint();
-    Hint(const std::vector<std::vector<im::Point>>& vertexes);
+    Hint(const std::vector<im::Point>& vertexes);
 
-    const std::vector<std::vector<im::Point>> vertexes;
+    const std::vector<im::Point> vertexes;
   };
 
   void hello();
