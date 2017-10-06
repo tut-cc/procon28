@@ -6,3 +6,4 @@ EXPORTS
 	detectSegments
 	detectVertexes
 	roll
+	writeIDs

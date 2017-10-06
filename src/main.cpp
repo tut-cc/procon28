@@ -16,8 +16,13 @@ int main()
   cv::Mat img = cv::imread(str, cv::IMREAD_GRAYSCALE);
   if (img.empty()) return -1;
 
+  std::vector<im::Point> ps;
+
   cv::threshold(img, img, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
-  auto pieceImgs = im::devideImg(img);
+  auto pieceImgs = im::devideImg(img, ps);
+  writeIDs(ps, img, 1);
+  cv::resize(img, img, cv::Size(), 0.3, 0.3);
+  cv::imshow("before", img);
 
   int id = 1;
   for (auto &pieceImg : pieceImgs) {
