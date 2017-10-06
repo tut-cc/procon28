@@ -26,6 +26,15 @@ namespace im {
     double x, y;
   };
 
+  class Edge {
+  public:
+    Edge();
+
+    Pointd ends[3];
+    int ptns[3];
+    int pLR[3];
+  };
+
   class Piece {
   public:
     Piece();

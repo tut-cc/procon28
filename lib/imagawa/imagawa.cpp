@@ -180,6 +180,8 @@ im::Pointd intersection(const cv::Vec4i &v1, const cv::Vec4i &v2) {
   return inter;
 }
 
+im::Edge::Edge() : ptns{ -1, -1, -1 }, pLR{ 0, 0, 0 } {}
+
 static double dist2(double x1, double y1, double x2, double y2) {
   return (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2);
 }
@@ -206,15 +208,14 @@ std::vector<im::Pointd> im::detectVertexes(const std::vector<cv::Vec4i> &segment
     }
   }
 
-  std::vector<Pointd> vertexes;
-  std::vector<int> xFlgs(segments.size(), 0);
+  std::vector<im::Edge> edges(segments.size());
   for (auto i = 0; i < segments.size() - 1; i++) {
 
     auto skipJ = i;
     for (auto lr = 1; lr <= 2; lr++) {
 
       // 線分左/右側の交点が未決定のとき
-      if (~xFlgs[i] & lr) {
+      if (edges[i].pLR[lr] == 0) {
 
         // 端点との距離が最も小さくなる交点を見つける
         auto minD2 = 1.0e9;
@@ -235,16 +236,78 @@ std::vector<im::Pointd> im::detectVertexes(const std::vector<cv::Vec4i> &segment
         }
 
         // 確定済みだった場合segments[i]は途切れ線だったと判定し切り捨てる
-        if (xFlgs[minJ] & minNLR || minD2 >= 1.0e9) {
-          std::cout << "avava:" << i << ":" << minJ << std::endl;
+        if (edges[minJ].pLR[minNLR] != 0 || minD2 >= 1.0e9) {
           break;
         }
 
-        xFlgs[minJ] |= minNLR;
-        vertexes.push_back(inters[i][minJ]);
+        // 辺を確定して双方向リストっぽいものにする
+        edges[i].ends[lr] = inters[i][minJ];
+        edges[i].ptns[lr] = minJ;
+        edges[i].pLR[lr] = minNLR;
+
+        edges[minJ].ends[minNLR] = inters[i][minJ];
+        edges[minJ].ptns[minNLR] = i;
+        edges[minJ].pLR[minNLR] = lr;
+
         skipJ = minJ;
       }
     }
+  }
+
+  std::vector<im::Pointd> vertexes;
+
+  auto startID = 0;
+  while (startID < edges.size()) {
+    if (edges[startID].pLR[1] != 0 && edges[startID].pLR[2] != 0) {
+      break;
+    }
+    startID++;
+  }
+
+  if (startID == edges.size()) {
+    std::cout << "ng" << std::endl;
+    return vertexes;
+  }
+
+  vertexes.push_back(edges[startID].ends[1]);
+  auto id = edges[startID].ptns[2];
+  auto lr = edges[startID].pLR[2];
+  auto cnt = 0;
+  while (id != startID) {
+    if (id == -1 || cnt >= edges.size()) {
+      std::cout << "ng" << std::endl;
+      return vertexes;
+    }
+
+    const auto &edge = edges[id];
+    vertexes.push_back(edge.ends[lr]);
+    id = edge.ptns[3 - lr];
+    lr = edge.pLR[3 - lr];
+    cnt++;
+  }
+
+  std::cout << "ok" << std::endl;
+
+  // 反時計回りだった場合時計回りに修正
+  auto l = 0;  // 左端点のインデックス
+  auto lp = im::Pointd(1.0e9, 1.0e9);  // 左端点
+  for (auto i = 0; i < vertexes.size(); i++) {
+    if (vertexes[i].x < lp.x) {
+      l = i;
+      lp = vertexes[i];
+    }
+  }
+
+  auto bef = vertexes[l > 0 ? l - 1 : vertexes.size() - 1];
+  auto aft = vertexes[l < vertexes.size() - 1 ? l + 1 : 0];
+  im::Pointd va(lp.x - bef.x, lp.y - bef.y);
+  im::Pointd vb(aft.x - lp.x, aft.y - lp.y);
+  if (va.x * vb.y - va.y * vb.x < 0) {
+    std::reverse(vertexes.begin(), vertexes.end());
+  }
+
+  for (auto vertex : vertexes) {
+    std::cout << vertex.x << ", " << vertex.y << std::endl;
   }
 
   return vertexes;
