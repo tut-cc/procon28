@@ -26,13 +26,14 @@ namespace im {
     double x, y;
   };
 
-  class Edge {
+  class Inter {
   public:
-    Edge();
+    Inter();
 
-    Pointd ends[3];
-    int ptns[3];
-    int pLR[3];
+    Pointd p;
+    double d2;
+    int lr;
+    bool f;
   };
 
   class Piece {
