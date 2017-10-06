@@ -39,7 +39,7 @@ void im::hello() {
   std::cout << "hello 今川" << std::endl;
 }
 
-std::vector<cv::Mat> im::devideImg(const cv::Mat &binaryImg) {
+std::vector<cv::Mat> im::devideImg(const cv::Mat &binaryImg, std::vector<Point> &ps) {
 
   // ラべリング
   cv::Mat labels, stats, centroids;
@@ -60,6 +60,8 @@ std::vector<cv::Mat> im::devideImg(const cv::Mat &binaryImg) {
     if (s < 100) {
       continue;
     }
+
+    ps.push_back(im::Point(l + 10, t + h - 10));
 
     // ピース切り出し
     auto pieceImg = binaryImg(cv::Rect(l, t, w, h)).clone();
@@ -427,4 +429,12 @@ im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
   piece.vertexes = result;
 
   return piece;
+}
+
+void im::writeIDs(const std::vector<im::Point> &ps, cv::Mat &img, int firstID) {
+  for (const auto &p : ps) {
+    cv::putText(img, std::to_string(firstID), cv::Point(p.x, p.y),
+      cv::FONT_HERSHEY_SIMPLEX, 4.0, cv::Scalar(128, 128, 128), 4, CV_AA);
+    firstID++;
+  }
 }
