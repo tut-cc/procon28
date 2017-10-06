@@ -341,7 +341,6 @@ std::vector<std::vector<im::Point>> im::roll(std::vector<cv::Vec4i> segments, st
   std::vector<std::vector<im::Point>> result;
 
 	//WARNING!
-	/*
   for (int corn = 0; corn < len_corn; corn++) {
     double dx = shape[corn].x
       - shape[(corn < len_corn - 1) ? corn + 1 : 0].x;
@@ -350,13 +349,14 @@ std::vector<std::vector<im::Point>> im::roll(std::vector<cv::Vec4i> segments, st
 		std::cout << "dx:" << dx << std::endl;
     len_side[corn] = sqrt(dx*dx + dy*dy);
   }
-	*/
+	/*
 	for(int corn = 0; corn < segments.size(); corn++){
 		cv::Vec4i side = segments[corn];
 		double dx = side[2]-side[0];
 		double dy = side[3]-side[1];
 		len_side[corn] = sqrt(dx*dx+dy*dy)*ratio;
 	}
+	*/
 	
 
   /*
