@@ -27,10 +27,9 @@ int main()
     auto segments = im::detectSegments(pieceImg);
     auto vertexes = im::detectVertexes(segments);
     std::cout << segments.size() << ":" << vertexes.size() << std::endl;
-    //BY Yoshiwatari
-    auto rolltexes = im::roll(segments, vertexes); // <-これが1ピース当たりの回転を含めた座標を返します
-    std::cout << id << "-----" << std::endl;
-    for(auto &rolling : rolltexes){
+    auto rolltexes = im::roll(id, vertexes); // <-これが1ピース当たりの回転を含めた座標を返します
+    std::cout << rolltexes.id << "-----" << std::endl;
+    for(auto &rolling : rolltexes.vertexes){
         std::cout << "=====" << std::endl;
         for(auto &segment : rolling){
             std::cout << ">> " << segment.x << "," << segment.y << std::endl;
