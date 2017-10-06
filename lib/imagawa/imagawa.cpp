@@ -31,9 +31,11 @@ const std::vector<double> &degs) : id(id), vertexes(vertexes), edges2(edges2), d
 im::Piece::Piece(int id, const std::vector<std::vector<im::Point>> &vertexes)
   : id(id), vertexes(vertexes) {}
 
-im::Answer::Answer() : Answer(0, {}) {}
+im::Answer::Answer() : Answer(-1, -1, im::Point(-1, -1)) {}
 
-im::Answer::Answer(int id, const std::vector<im::Point> &vertexes) : id(id), vertexes(vertexes) {}
+im::Answer::Answer(int id, int index, const im::Point& point) : id(id), index(index), point(point) {}
+
+im::Hint::Hint(const std::vector<std::vector<im::Point>>& vertexes) : vertexes(vertexes) {}
 
 void im::hello() {
   std::cout << "hello 今川" << std::endl;

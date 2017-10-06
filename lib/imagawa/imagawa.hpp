@@ -56,10 +56,18 @@ namespace im {
 
   class Answer {
     Answer();
-    Answer(int id, const std::vector<Point> &vertexes);
+    Answer(int id, int index, const im::Point& point);
 
-    int id;
-    std::vector<Point> vertexes;
+    const int id;
+    const int index;
+    const im::Point point;
+  };
+
+  class Hint {
+    Hint();
+    Hint(const std::vector<std::vector<im::Point>>& vertexes);
+
+    const std::vector<std::vector<im::Point>> vertexes;
   };
 
   void hello();
