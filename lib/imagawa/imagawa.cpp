@@ -404,6 +404,22 @@ im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
 					if(minY<0) xy.y -= minY;
 				}
         result.push_back(tmp_res);
+				//回転追加
+				for(int i=0;i<3;i++){
+					int minX = 1.0e9;
+					int minY = 1.0e9;
+					for(auto &xy:tmp_res){
+						xy.x = xy.x*cos(PI/2)-xy.y*sin(PI/2);
+						xy.y = xy.x*sin(PI/2)+xy.y*cos(PI/2);
+						if(xy.x < minX) minX = xy.x;
+						if(xy.y < minY) minY = xy.y;
+					}
+					for(auto &xy:tmp_res){
+						if(minX<0) xy.x -= minX;
+						if(minY<0) xy.y -= minY;
+					}
+					result.push_back(tmp_res);
+				}
       }
     }
   }
