@@ -26,10 +26,10 @@ im::Piece::Piece() : Piece(0, {}) {}
 
 /*
 im::Piece::Piece(int id, const std::vector<im::Point> &vertexes, const std::vector<int> &edges2,
-  const std::vector<double> &degs) : id(id), vertexes(vertexes), edges2(edges2), degs(degs) {}
+const std::vector<double> &degs) : id(id), vertexes(vertexes), edges2(edges2), degs(degs) {}
 */
-im::Piece::Piece(int id, const std::vector<std::vector<im::Point>> &vertexes) 
-	: id(id), vertexes(vertexes) {}
+im::Piece::Piece(int id, const std::vector<std::vector<im::Point>> &vertexes)
+  : id(id), vertexes(vertexes) {}
 
 im::Answer::Answer() : Answer(0, {}) {}
 
@@ -165,11 +165,11 @@ std::vector<cv::Vec4i> im::detectSegments(const cv::Mat &edgeImg) {
 }
 
 // 2線分を延長したときの交点
-im::Pointd intersection(const cv::Vec4i &v1, const cv::Vec4i &v2) {
+static im::Inter intersection(const cv::Vec4i &v1, const cv::Vec4i &v2) {
 
   // 傾きが等しいときは大きい値を返す
   if (std::abs(dot(v1, v2)) >= 0.9995) {
-    return im::Pointd(1.0e9, 1.0e9);
+    return im::Inter();
   }
 
   auto a1 = (v1[3] - v1[1]) / (v1[2] - v1[0] != 0 ? v1[2] - v1[0] : 1.0e-9);
@@ -177,14 +177,14 @@ im::Pointd intersection(const cv::Vec4i &v1, const cv::Vec4i &v2) {
   auto a2 = (v2[3] - v2[1]) / (v2[2] - v2[0] != 0 ? v2[2] - v2[0] : 1.0e-9);
   auto b2 = v2[1] - a2 * v2[0];
 
-  im::Pointd inter;
-  inter.x = -(b1 - b2) / (a1 - a2);
-  inter.y = a1 * inter.x + b1;
+  im::Inter inter;
+  inter.p.x = -(b1 - b2) / (a1 - a2);
+  inter.p.y = a1 * inter.p.x + b1;
 
   return inter;
 }
 
-im::Edge::Edge() : ptns{ -1, -1, -1 }, pLR{ 0, 0, 0 } {}
+im::Inter::Inter() : p(1.0e9, 1.0e9), d2(1.0e9), lr(0), f(false) {}
 
 static double dist2(double x1, double y1, double x2, double y2) {
   return (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2);
@@ -200,118 +200,90 @@ static int nearLR(const cv::Vec4i &v, const im::Pointd &p) {
 
 std::vector<im::Pointd> im::detectVertexes(const std::vector<cv::Vec4i> &segments) {
 
-  // 線分の交点リスト
-  std::vector<std::vector<Pointd>> inters(segments.size());
+  // 頂点候補リスト
+  std::vector<std::vector<Inter>> inters(segments.size());
   for (auto &inter : inters) {
-    inter.resize(segments.size(), im::Pointd(1.0e9, 1.0e9));
+    inter.resize(segments.size());
   }
-
   for (auto i = 0; i < segments.size(); i++) {
     for (auto j = i + 1; j < segments.size(); j++) {
-      inters[i][j] = intersection(segments[i], segments[j]);
+      inters[i][j] = inters[j][i] = intersection(segments[i], segments[j]);
     }
   }
 
-  std::vector<im::Edge> edges(segments.size());
-  for (auto i = 0; i < segments.size() - 1; i++) {
+  // 頂点候補と線分端点の距離
+  for (auto i = 0; i < segments.size(); i++) {
+    for (auto j = i + 1; j < segments.size(); j++) {
+      inters[i][j].lr = nearLR(segments[i], inters[i][j].p);
+      inters[j][i].lr = nearLR(segments[j], inters[j][i].p);
+      inters[i][j].d2 = inters[j][i].d2 =
+        dist2(segments[i], inters[i][j].p, inters[i][j].lr) +
+        dist2(segments[j], inters[j][i].p, inters[j][i].lr);
+    }
+  }
 
-    auto skipJ = i;
-    for (auto lr = 1; lr <= 2; lr++) {
-
-      // 線分左/右側の交点が未決定のとき
-      if (edges[i].pLR[lr] == 0) {
-
-        // 端点との距離が最も小さくなる交点を見つける
-        auto minD2 = 1.0e9;
-        auto minJ = i;
-        auto minNLR = 1;
-        for (auto j = i + 1; j < segments.size(); j++) {
-          if (j == skipJ) {
-            continue;
-          }
-
-          auto nLR = nearLR(segments[j], inters[i][j]);
-          auto d2 = dist2(segments[i], inters[i][j], lr) + dist2(segments[j], inters[i][j], nLR);
-          if (d2 < minD2) {
-            minD2 = d2;
-            minJ = j;
-            minNLR = nLR;
-          }
-        }
-
-        // 確定済みだった場合segments[i]は途切れ線だったと判定し切り捨てる
-        if (edges[minJ].pLR[minNLR] != 0 || minD2 >= 1.0e9) {
-          break;
-        }
-
-        // 辺を確定して双方向リストっぽいものにする
-        edges[i].ends[lr] = inters[i][minJ];
-        edges[i].ptns[lr] = minJ;
-        edges[i].pLR[lr] = minNLR;
-
-        edges[minJ].ends[minNLR] = inters[i][minJ];
-        edges[minJ].ptns[minNLR] = i;
-        edges[minJ].pLR[minNLR] = lr;
-
-        skipJ = minJ;
+  // 開始頂点の決定
+  auto startI = -1, startJ = -1;
+  auto minD2 = 1.0e9;
+  for (auto i = 0; i < segments.size(); i++) {
+    for (auto j = i + 1; j < segments.size(); j++) {
+      if (inters[i][j].d2 < minD2) {
+        startI = i;
+        startJ = j;
+        minD2 = inters[i][j].d2;
       }
     }
   }
+  inters[startI][startJ].f = inters[startJ][startI].f = true;
 
   std::vector<im::Pointd> vertexes;
+  vertexes.push_back(inters[startI][startJ].p);
 
-  auto startID = 0;
-  while (startID < edges.size()) {
-    if (edges[startID].pLR[1] != 0 && edges[startID].pLR[2] != 0) {
-      break;
+  auto i = startI;
+  auto lr = inters[startI][startJ].lr;
+  while (i != startJ) {
+    auto minJ = -1;
+    minD2 = 1.0e9;
+    for (auto j = 0; j < inters.size(); j++) {
+      if (inters[i][j].f || inters[i][j].lr == lr) {
+        continue;
+      }
+
+      if (inters[i][j].d2 < minD2) {
+        minJ = j;
+        minD2 = inters[i][j].d2;
+      }
     }
-    startID++;
-  }
 
-  if (startID == edges.size()) {
-    std::cout << "ng" << std::endl;
-    return vertexes;
-  }
-
-  vertexes.push_back(edges[startID].ends[1]);
-  auto id = edges[startID].ptns[2];
-  auto lr = edges[startID].pLR[2];
-  auto cnt = 0;
-  while (id != startID) {
-    if (id == -1 || cnt >= edges.size()) {
-      std::cout << "ng" << std::endl;
+    if (minJ == -1) {
+      std::cout << "NG" << std::endl;
       return vertexes;
     }
 
-    const auto &edge = edges[id];
-    vertexes.push_back(edge.ends[lr]);
-    id = edge.ptns[3 - lr];
-    lr = edge.pLR[3 - lr];
-    cnt++;
+    vertexes.push_back(inters[i][minJ].p);
+    inters[i][minJ].f = inters[minJ][i].f = true;
+    lr = inters[minJ][i].lr;
+    i = minJ;
   }
 
-  std::cout << "ok" << std::endl;
+  std::cout << "OK" << std::endl;
 
   // 反時計回りだった場合時計回りに修正
-  auto l = 0;  // 左端点のインデックス
-  auto lp = im::Pointd(1.0e9, 1.0e9);  // 左端点
+  auto li = 0;
+  auto lp = im::Pointd(1.0e9, 1.0e9);
   for (auto i = 0; i < vertexes.size(); i++) {
     if (vertexes[i].x < lp.x) {
-      l = i;
+      li = i;
       lp = vertexes[i];
     }
   }
 
-  auto bef = vertexes[l > 0 ? l - 1 : vertexes.size() - 1];
-  auto aft = vertexes[l < vertexes.size() - 1 ? l + 1 : 0];
+  auto bef = vertexes[li > 0 ? li - 1 : vertexes.size() - 1];
+  auto aft = vertexes[li < vertexes.size() - 1 ? li + 1 : 0];
   im::Pointd va(lp.x - bef.x, lp.y - bef.y);
   im::Pointd vb(aft.x - lp.x, aft.y - lp.y);
   if (va.x * vb.y - va.y * vb.x < 0) {
     std::reverse(vertexes.begin(), vertexes.end());
-  }
-
-  for (auto vertex : vertexes) {
-    std::cout << vertex.x << ", " << vertex.y << std::endl;
   }
 
   return vertexes;
@@ -328,11 +300,11 @@ N:na xa1 ya1 xa2 ya2 ... xana yana:nb xb1 yb1 xb2 yb2 ...xbna ybna:...
 
 //rollの戻り値確認
 im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
-	im::Piece piece;
+  im::Piece piece;
   //Transfer [pix -> mm]
   double ratio = 55 / (512 * 2.5); //[(mm/pix/mm)]
-  //double ratio = 55 / (512 * 1.0); //[(mm/pix/mm)]
-  //double ratio = 1.0; //[(mm/pix/mm)]
+                                   //double ratio = 55 / (512 * 1.0); //[(mm/pix/mm)]
+                                   //double ratio = 1.0; //[(mm/pix/mm)]
   std::cout << "-----" << std::endl;
   for (im::Pointd &xy : shape) {
     xy.x *= ratio;
@@ -345,24 +317,24 @@ im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
   std::vector<im::Point> tmp_res(len_corn, im::Point(0, 0));
   std::vector<std::vector<im::Point>> result;
 
-	//WARNING!
+  //WARNING!
   for (int corn = 0; corn < len_corn; corn++) {
     double dx = shape[corn].x
       - shape[(corn < len_corn - 1) ? corn + 1 : 0].x;
     double dy = shape[corn].y
       - shape[(corn < len_corn - 1) ? corn + 1 : 0].y;
-		std::cout << "dx:" << dx << std::endl;
+    std::cout << "dx:" << dx << std::endl;
     len_side[corn] = sqrt(dx*dx + dy*dy);
   }
-	/*
-	for(int corn = 0; corn < segments.size(); corn++){
-		cv::Vec4i side = segments[corn];
-		double dx = side[2]-side[0];
-		double dy = side[3]-side[1];
-		len_side[corn] = sqrt(dx*dx+dy*dy)*ratio;
-	}
-	*/
-	
+  /*
+  for(int corn = 0; corn < segments.size(); corn++){
+  cv::Vec4i side = segments[corn];
+  double dx = side[2]-side[0];
+  double dy = side[3]-side[1];
+  len_side[corn] = sqrt(dx*dx+dy*dy)*ratio;
+  }
+  */
+
 
   /*
   >>terms to stop<<
@@ -373,19 +345,19 @@ im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
   1. A point isn't at any grids.
   */
 
-	//std::cout << "dy0:" << shape[0].y << "," << shape[1].y << std::endl;
+  //std::cout << "dy0:" << shape[0].y << "," << shape[1].y << std::endl;
   double dy0 = (shape[1].y - shape[0].y);
-	//std::cout << "dy0:" << dy0 << std::endl;
+  //std::cout << "dy0:" << dy0 << std::endl;
   double theta0 = 0;
-	//std::cout << "len_side[0]:" << len_side[0] << std::endl;
+  //std::cout << "len_side[0]:" << len_side[0] << std::endl;
   if (dy0 != 0) {
-		if(std::abs(dy0) <= len_side[0])
-    	theta0 = acos(dy0 / len_side[0]);
-		else if(dy0 > 0)
-			theta0 = acos(1);
-		else if(dy0 < 0)
-			theta0 = acos(-1);
-		//std::cout << "theta0:" << theta0 << std::endl;
+    if (std::abs(dy0) <= len_side[0])
+      theta0 = acos(dy0 / len_side[0]);
+    else if (dy0 > 0)
+      theta0 = acos(1);
+    else if (dy0 < 0)
+      theta0 = acos(-1);
+    //std::cout << "theta0:" << theta0 << std::endl;
     //cout << len_side[0] << endl;
   }
   else {
@@ -395,12 +367,12 @@ im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
   for (double dy = (int)len_side[0]; dy <= len_side[0] && theta <= PI / 4; dy--) {
     //(dx!=0) ? theta = asin(dx/len_side[0]) : theta = 0;
     theta = acos(dy / len_side[0]);
-		//std::cout << "theta1:" << theta << std::endl;
+    //std::cout << "theta1:" << theta << std::endl;
     dtheta = theta0 - theta;
-		//std::cout << "theta2:" << theta << std::endl;
+    //std::cout << "theta2:" << theta << std::endl;
     //cout << theta0*DP << ":" << theta*DP << ":" << dtheta*DP << endl;
-		int minX = 1.0e9;
-		int minY = 1.0e9;
+    int minX = 1.0e9;
+    int minY = 1.0e9;
     for (int corn = 0; corn < len_corn; corn++) {
       //Rotation matrix
       double x =
@@ -409,34 +381,50 @@ im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
       double y =
         (shape[corn].x - shape[0].x)*sin(dtheta) +
         (shape[corn].y - shape[0].y)*cos(dtheta);
-			//std::cout << "x1:" << x << std::endl;
+      //std::cout << "x1:" << x << std::endl;
       bool flagx = false;
       bool flagy = false;
-			//std::cout << x << "," << y << std::endl;
+      //std::cout << x << "," << y << std::endl;
       if (std::abs(floor(x) - x) < derror) { x = floor(x); flagx = true; }
       if (std::abs(floor(y) - y) < derror) { y = floor(y); flagy = true; }
       if (std::abs(ceil(x) - x) < derror) { x = ceil(x); flagx = true; }
       if (std::abs(ceil(y) - y) < derror) { y = ceil(y); flagy = true; }
-			//std::cout << "x2:" << x << std::endl;
-      if (flagx && flagy){
-				if(x < minX) minX = x;
-				if(y < minY) minY = y;
-				tmp_res[corn] = im::Point(x, y);
-				//std::cout << "res:" << x << "," << y << std::endl;
-			}
+      //std::cout << "x2:" << x << std::endl;
+      if (flagx && flagy) {
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        tmp_res[corn] = im::Point(x, y);
+        //std::cout << "res:" << x << "," << y << std::endl;
+      }
       else break;
 
       if (corn == len_corn - 1) {
-				for(auto &xy:tmp_res){
-					if(minX<0) xy.x -= minX;
-					if(minY<0) xy.y -= minY;
-				}
+        for (auto &xy : tmp_res) {
+          if (minX<0) xy.x -= minX;
+          if (minY<0) xy.y -= minY;
+        }
         result.push_back(tmp_res);
+        //回転追加
+        for (int i = 0; i<3; i++) {
+          int minX = 1.0e9;
+          int minY = 1.0e9;
+          for (auto &xy : tmp_res) {
+            xy.x = xy.x*cos(PI / 2) - xy.y*sin(PI / 2);
+            xy.y = xy.x*sin(PI / 2) + xy.y*cos(PI / 2);
+            if (xy.x < minX) minX = xy.x;
+            if (xy.y < minY) minY = xy.y;
+          }
+          for (auto &xy : tmp_res) {
+            if (minX<0) xy.x -= minX;
+            if (minY<0) xy.y -= minY;
+          }
+          result.push_back(tmp_res);
+        }
       }
     }
   }
-	piece.id = id;
-	piece.vertexes = result;
+  piece.id = id;
+  piece.vertexes = result;
 
   return piece;
 }

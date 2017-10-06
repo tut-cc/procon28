@@ -26,31 +26,32 @@ namespace im {
     double x, y;
   };
 
-  class Edge {
+  class Inter {
   public:
-    Edge();
+    Inter();
 
-    Pointd ends[3];
-    int ptns[3];
-    int pLR[3];
+    Pointd p;
+    double d2;
+    int lr;
+    bool f;
   };
 
   class Piece {
   public:
     Piece();
-		/*
+    /*
     Piece(int id, const std::vector<Point> &vertexes,
-      const std::vector<int> &edges2, const std::vector<double> &degs);
-		*/
+    const std::vector<int> &edges2, const std::vector<double> &degs);
+    */
     Piece(int id, const std::vector<std::vector<Point>> &vertexes);
 
     int id;
     std::vector<std::vector<Point>> vertexes;
 
-		/*
+    /*
     std::vector<int> edges2;
     std::vector<double> degs;
-		*/
+    */
   };
 
   class Answer {
