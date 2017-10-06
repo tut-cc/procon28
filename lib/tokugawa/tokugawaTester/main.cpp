@@ -90,7 +90,7 @@ void gen(std::vector<im::Piece> problem)
   Clipper c;
   for (const auto& p : problem) {
     Path path;
-    for (const auto& v : p.vertexes) {
+    for (const auto& v : p.vertexes.front()) {
       path << IntPoint(v.x, v.y);
     }
     c.AddPath(path, ptClip, true);
@@ -133,7 +133,7 @@ int main()
       ifs >> y;
       points.push_back(im::Point(x, y));
     }
-    waku = im::Piece(-1, points, std::vector<int>(), std::vector<double>());
+    waku = im::Piece(-1, { points });
   }
   for (int id = 0; !ifs.eof(); ++id) {
     int n;
@@ -145,7 +145,7 @@ int main()
       ifs >> y;
       points.push_back(im::Point(x, y));
     }
-    im::Piece piece(id, points, std::vector<int>(), std::vector<double>());
+    im::Piece piece(id, { points });
     problem.push_back(piece);
   }
 
@@ -153,12 +153,12 @@ int main()
   for (auto& piece : problem) {
     int minx = 1 << 28;
     int miny = 1 << 28;
-    for (const auto& point : piece.vertexes) {
+    for (const auto& point : piece.vertexes.front()) {
       minx = std::min(minx, point.x);
       miny = std::min(miny, point.y);
     }
     offsets.push_back(im::Point(minx, miny));
-    for (auto& point : piece.vertexes) {
+    for (auto& point : piece.vertexes.front()) {
       point.x -= minx;
       point.y -= miny;
     }

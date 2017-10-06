@@ -15,9 +15,10 @@ namespace cl = ClipperLib;
 struct Info {
   std::bitset<MAX_NUM_OF_PEICES> set;
   std::vector<im::Point> haiti;
+  std::vector<int> indexes;
 
-  Info() : set(), haiti(MAX_NUM_OF_PEICES, im::Point(-1, -1)) {}
-  Info(const std::bitset<MAX_NUM_OF_PEICES>& set, const std::vector<im::Point>& haiti) : set(set), haiti(haiti) {}
+  Info() : set(), haiti(MAX_NUM_OF_PEICES, im::Point(-1, -1)), indexes(MAX_NUM_OF_PEICES, -1) {}
+  Info(const std::bitset<MAX_NUM_OF_PEICES>& set, const std::vector<im::Point>& haiti, const std::vector<int>& indexes) : set(set), haiti(haiti), indexes(indexes) {}
 };
 
 struct State {
@@ -33,15 +34,17 @@ struct State {
     bornus(bornus), edges(edges) {}
 };
 
-static cl::Paths piece2paths(const im::Piece& piece)
+static auto piece2paths(const im::Piece& piece)
 {
-  cl::Path path;
-  for (im::Point p : piece.vertexes) {
-    path << cl::IntPoint(p.x, p.y);
+  cl::Paths paths;
+  for (const std::vector<im::Point>& vec : piece.vertexes) {
+    cl::Path path;
+    for (const im::Point& p : vec) {
+      path << cl::IntPoint(p.x, p.y);
+    }
+    paths << path;
   }
-  cl::Paths dst;
-  dst << path;
-  return dst;
+  return paths;
 }
 
 // <abcを返す
@@ -358,9 +361,9 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
   std::vector<std::priority_queue<State, std::vector<State>, MatsuriCompare>> stacks(n + 1);
   State atom(piece2paths(waku));
   stacks[0].push(atom);
-  std::vector<cl::Path> paths;
+  std::vector<cl::Paths> paths;
   for (const auto& piece : problem) {
-    paths.push_back(piece2paths(piece).front());
+    paths.push_back(piece2paths(piece));
   }
   double best_score = 1 << 28;;
   Info best_info;
@@ -404,63 +407,68 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
         next_set[j] = true;
         int awawa = 0;
         // pathsを当てはめる
-        std::set<std::pair<int, int>> targets;
-        for (const auto& wp : node.waku.front()) {
-          for (const auto &pp : paths[j]) {
-            int x = wp.X - pp.X;
-            int y = wp.Y - pp.Y;
-            targets.insert(std::make_pair(x, y));
+        const int m = paths[j].size();
+        for (int k = 0; k < m; ++k) {
+          const auto& path = paths[j][k];
+          std::set<std::pair<int, int>> targets;
+          for (const auto& wp : node.waku.front()) {
+            for (const auto &pp : path) {
+              int x = wp.X - pp.X;
+              int y = wp.Y - pp.Y;
+              targets.insert(std::make_pair(x, y));
+            }
           }
-        }
-        for (const auto& p : targets) {
-          const int x = p.first;
-          const int y = p.second;
-          //for (int x = 0; x < YOKO; ++x) {
-            //for (int y = 0; y < TATE; ++y) {
-          const auto& path = paths[j];
-          // はみ出しがある配置ならNG
-          bool ok = true;
-          for (const auto& point : path) {
-            ok &= 0 <= x + point.X && x + point.X < YOKO
-              && 0 <= y + point.Y && y + point.Y < TATE;
-          }
-          if (!ok) {
-            continue;
-          }
-          cl::Path zurasied_path = path;
-          for (auto& point : zurasied_path) {
-            point.X += x;
-            point.Y += y;
-          }
-          bool dame = false;
-          auto ret_waku = cut_waku(node.waku, zurasied_path);
-          dame |= std::get<0>(ret_waku);
-          auto ret_uni = patch_uni(node.uni, zurasied_path);
-          dame |= std::get<0>(ret_uni);
-          if (dame) {
-            continue;
-          }
-          auto bornus = std::get<1>(ret_waku) + std::get<1>(ret_uni);
-          auto next_waku = std::get<2>(ret_waku);
-          auto next_uni = std::get<2>(ret_uni);
-          auto next_haiti = node.info.haiti;
-          next_haiti[j] = im::Point(x, y);
-          Info next_info(next_set, next_haiti);
-          State next(next_waku, next_uni, next_info, node.bornus + bornus, node.edges + path.size());
-          if (done.count(next_haiti) > 0) {
-            continue;
-          }
-          done.insert(next_haiti);
-          stacks[i + 1].push(next);
-          //++awawa;
-          //cl::Paths tmp;
-          //tmp << zurasied_path;
-          //std::cerr << "zurashi" << x << ", " << y << std::endl;
-          //DrawPolygons(node.waku, 0x160000FF, 0x600000FF); //blue
-          //DrawPolygons(tmp, 0x20FFFF00, 0x30FF0000); //orange
-          //DrawPolygons(next_waku, 0x3000FF00, 0xFF006600); //solution shaded green
+          for (const auto& p : targets) {
+            const int x = p.first;
+            const int y = p.second;
+            //for (int x = 0; x < YOKO; ++x) {
+              //for (int y = 0; y < TATE; ++y) {
+            // はみ出しがある配置ならNG
+            bool ok = true;
+            for (const auto& point : path) {
+              ok &= 0 <= x + point.X && x + point.X < YOKO
+                && 0 <= y + point.Y && y + point.Y < TATE;
+            }
+            if (!ok) {
+              continue;
+            }
+            cl::Path zurasied_path = path;
+            for (auto& point : zurasied_path) {
+              point.X += x;
+              point.Y += y;
+            }
+            bool dame = false;
+            auto ret_waku = cut_waku(node.waku, zurasied_path);
+            dame |= std::get<0>(ret_waku);
+            auto ret_uni = patch_uni(node.uni, zurasied_path);
+            dame |= std::get<0>(ret_uni);
+            if (dame) {
+              continue;
+            }
+            auto bornus = std::get<1>(ret_waku) + std::get<1>(ret_uni);
+            auto next_waku = std::get<2>(ret_waku);
+            auto next_uni = std::get<2>(ret_uni);
+            auto next_haiti = node.info.haiti;
+            next_haiti[j] = im::Point(x, y);
+            auto next_indexes = node.info.indexes;
+            next_indexes[j] = k;
+            Info next_info(next_set, next_haiti, next_indexes);
+            State next(next_waku, next_uni, next_info, node.bornus + bornus, node.edges + path.size());
+            if (done.count(next_haiti) > 0) {
+              continue;
+            }
+            done.insert(next_haiti);
+            stacks[i + 1].push(next);
+            //++awawa;
+            //cl::Paths tmp;
+            //tmp << zurasied_path;
+            //std::cerr << "zurashi" << x << ", " << y << std::endl;
+            //DrawPolygons(node.waku, 0x160000FF, 0x600000FF); //blue
+            //DrawPolygons(tmp, 0x20FFFF00, 0x30FF0000); //orange
+            //DrawPolygons(next_waku, 0x3000FF00, 0xFF006600); //solution shaded green
+          //}
         //}
-      //}
+          }
         }
         //std::cerr << "\t\t" << awawa << " transed to next" << std::endl;
       }
@@ -470,7 +478,7 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
     }
   }
   for (int i = 0; i < problem.size(); ++i) {
-    std::cerr << "(" << i << ") [" << (best_info.set[i] ? "x" : " ") << "] : " << best_info.haiti[i].x << " " << best_info.haiti[i].y << std::endl;
+    std::cerr << "(" << i << " - " << best_info.indexes[i] << ") [" << (best_info.set[i] ? "x" : " ") << "] : " << best_info.haiti[i].x << " " << best_info.haiti[i].y << std::endl;
   }
   return std::vector<im::Answer>();
 }
