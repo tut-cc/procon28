@@ -1,6 +1,6 @@
 cd /d %~dp0
 mkdir include
 cd include
-del polyclipping
+rmdir polyclipping
 mklink /D polyclipping ..\lib\clipper\cpp
 pause
