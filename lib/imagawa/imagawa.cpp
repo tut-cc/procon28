@@ -24,16 +24,14 @@ im::Pointd::Pointd(double x, double y) : x(x), y(y) {}
 
 im::Piece::Piece() : Piece(0, {}) {}
 
-/*
-im::Piece::Piece(int id, const std::vector<im::Point> &vertexes, const std::vector<int> &edges2,
-const std::vector<double> &degs) : id(id), vertexes(vertexes), edges2(edges2), degs(degs) {}
-*/
 im::Piece::Piece(int id, const std::vector<std::vector<im::Point>> &vertexes)
   : id(id), vertexes(vertexes) {}
 
-im::Answer::Answer() : Answer(0, {}) {}
+im::Answer::Answer() : Answer(-1, -1, im::Point(-1, -1)) {}
 
-im::Answer::Answer(int id, const std::vector<im::Point> &vertexes) : id(id), vertexes(vertexes) {}
+im::Answer::Answer(int id, int index, const im::Point& point) : id(id), index(index), point(point) {}
+
+im::Hint::Hint(const std::vector<im::Point>& vertexes) : vertexes(vertexes) {}
 
 void im::hello() {
   std::cout << "hello 今川" << std::endl;
@@ -301,31 +299,32 @@ N:na xa1 ya1 xa2 ya2 ... xana yana:nb xb1 yb1 xb2 yb2 ...xbna ybna:...
 //For the time being, coordinates is written by [mm]
 
 //rollの戻り値確認
-im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
+im::Piece im::roll(const int id, const std::vector<im::Pointd>& _shape) {
   im::Piece piece;
   //Transfer [pix -> mm]
-  double ratio = 55 / (512 * 2.5); //[(mm/pix/mm)]
+  double ratio = 210 / (1654 * 2.5); //[(mm/pix/mm)]
                                    //double ratio = 55 / (512 * 1.0); //[(mm/pix/mm)]
                                    //double ratio = 1.0; //[(mm/pix/mm)]
   std::cout << "-----" << std::endl;
+  std::vector<im::Pointd> shape(_shape);
   for (im::Pointd &xy : shape) {
     xy.x *= ratio;
     xy.y *= ratio;
     //std::cout << xy.x << "," << xy.y << std::endl;
   }
 
-  int len_corn = shape.size();
-  std::vector<double> len_side(len_corn, 0);
-  std::vector<im::Point> tmp_res(len_corn, im::Point(0, 0));
+  int len_corn = shape.size(); //角の数
+  std::vector<double> len_side(len_corn, 0); //辺の長さ
+  std::vector<im::Point> tmp_res(len_corn, im::Point(0, 0)); 
   std::vector<std::vector<im::Point>> result;
 
-  //WARNING!
+  //辺の長さを頂点から取得
   for (int corn = 0; corn < len_corn; corn++) {
     double dx = shape[corn].x
       - shape[(corn < len_corn - 1) ? corn + 1 : 0].x;
     double dy = shape[corn].y
       - shape[(corn < len_corn - 1) ? corn + 1 : 0].y;
-    std::cout << "dx:" << dx << std::endl;
+    //std::cout << "dx:" << dx << std::endl;
     len_side[corn] = sqrt(dx*dx + dy*dy);
   }
   /*
@@ -348,13 +347,21 @@ im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
   */
 
   //std::cout << "dy0:" << shape[0].y << "," << shape[1].y << std::endl;
+	//頂点0と頂点1のy,x幅を取得
   double dy0 = (shape[1].y - shape[0].y);
+  double dx0 = (shape[1].x - shape[0].x);
   //std::cout << "dy0:" << dy0 << std::endl;
   double theta0 = 0;
   //std::cout << "len_side[0]:" << len_side[0] << std::endl;
+	/*
+	・頂点0,1がx軸に平行に並んでいなけらば->y軸に対する辺の角度を計算
+	・頂点0,1がx軸に平行に並んでいれば->角度は0
+	*/
   if (dy0 != 0) {
     if (std::abs(dy0) <= len_side[0])
       theta0 = acos(dy0 / len_side[0]);
+			//PI超える場合
+			if(dx0 < 0) theta0 += PI;
     else if (dy0 > 0)
       theta0 = acos(1);
     else if (dy0 < 0)
@@ -363,20 +370,30 @@ im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
     //cout << len_side[0] << endl;
   }
   else {
-    theta0 = 0;
+    theta0 = PI / 4;
   }
+
   double theta = 0, dtheta = 0;
-  for (double dy = (int)len_side[0]; dy <= len_side[0] && theta <= PI / 4; dy--) {
+	/*
+	1.最初は頂点0,1をy軸方向に並べる
+	2.頂点1を回転させ、1グリッド分y軸方向の長さを減らす
+	3.90°回転したら終了
+	*/
+  for (double dy = (int)len_side[0]; dy <= len_side[0] && theta <= PI / 2; dy--) {
     //(dx!=0) ? theta = asin(dx/len_side[0]) : theta = 0;
     theta = acos(dy / len_side[0]);
     //std::cout << "theta1:" << theta << std::endl;
-    dtheta = theta0 - theta;
+		//初期位置からの回転角度を計算
+    dtheta = theta - theta0;
     //std::cout << "theta2:" << theta << std::endl;
     //cout << theta0*DP << ":" << theta*DP << ":" << dtheta*DP << endl;
     int minX = 1.0e9;
     int minY = 1.0e9;
     for (int corn = 0; corn < len_corn; corn++) {
       //Rotation matrix
+			/*各座標を頂点0を中心とした位置へ移動した後に、
+			  dtheta°だけ回転移動させている
+			*/
       double x =
         (shape[corn].x - shape[0].x)*cos(dtheta) -
         (shape[corn].y - shape[0].y)*sin(dtheta);
@@ -392,6 +409,9 @@ im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
       if (std::abs(ceil(x) - x) < derror) { x = ceil(x); flagx = true; }
       if (std::abs(ceil(y) - y) < derror) { y = ceil(y); flagy = true; }
       //std::cout << "x2:" << x << std::endl;
+			/*グリッド上にある座標だけ採用
+			  一つでもエラーがあればその角度は無効
+			*/
       if (flagx && flagy) {
         if (x < minX) minX = x;
         if (y < minY) minY = y;
@@ -400,25 +420,27 @@ im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
       }
       else break;
 
+			//マイナスの座標を処理
       if (corn == len_corn - 1) {
         for (auto &xy : tmp_res) {
-          if (minX<0) xy.x -= minX;
-          if (minY<0) xy.y -= minY;
+          if (minX < 0) xy.x -= minX;
+          if (minY < 0) xy.y -= minY;
         }
         result.push_back(tmp_res);
-        //回転追加
-        for (int i = 0; i<3; i++) {
+        //90°回転x3
+        for (int i = 0; i < 3; i++) {
           int minX = 1.0e9;
           int minY = 1.0e9;
           for (auto &xy : tmp_res) {
-            xy.x = xy.x*cos(PI / 2) - xy.y*sin(PI / 2);
-            xy.y = xy.x*sin(PI / 2) + xy.y*cos(PI / 2);
+            auto tmpx = xy.x;
+            xy.x = tmpx*cos(PI / 2) - xy.y*sin(PI / 2);
+            xy.y = tmpx*sin(PI / 2) + xy.y*cos(PI / 2);
             if (xy.x < minX) minX = xy.x;
             if (xy.y < minY) minY = xy.y;
           }
           for (auto &xy : tmp_res) {
-            if (minX<0) xy.x -= minX;
-            if (minY<0) xy.y -= minY;
+            if (minX < 0) xy.x -= minX;
+            if (minY < 0) xy.y -= minY;
           }
           result.push_back(tmp_res);
         }
