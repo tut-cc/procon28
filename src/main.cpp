@@ -32,9 +32,13 @@ int main() {
     }
 
     // test
-    for(int i = 0; i < imgs.size(); i++) {
-        cv::imshow(std::to_string(i), imgs[i]);
-    }
+    //for(int i = 0; i < imgs.size(); i++) {
+    //    auto name = std::to_string(i);
+    //    cv::imshow(name, imgs[i]);
+    //    cv::waitKey(0);
+    //}
+    //cv::destroyAllWindows();
+    //cv::waitKey(0);
 
     /*---- detective of lines and points ----*/
     im::Piece frame;
@@ -75,6 +79,7 @@ int main() {
                 }
             }
             rolltexes.vertexes = {rolltexes.vertexes[mpos]};
+            frame = rolltexes;
         }
         else problem.push_back(rolltexes);
 
