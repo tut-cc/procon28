@@ -39,19 +39,19 @@ namespace im {
   class Piece {
   public:
     Piece();
-		/*
+    /*
     Piece(int id, const std::vector<Point> &vertexes,
-      const std::vector<int> &edges2, const std::vector<double> &degs);
-		*/
+    const std::vector<int> &edges2, const std::vector<double> &degs);
+    */
     Piece(int id, const std::vector<std::vector<Point>> &vertexes);
 
     int id;
     std::vector<std::vector<Point>> vertexes;
 
-		/*
+    /*
     std::vector<int> edges2;
     std::vector<double> degs;
-		*/
+    */
   };
 
   class Answer {
@@ -64,8 +64,9 @@ namespace im {
 
   void hello();
 
-  std::vector<cv::Mat> devideImg(const cv::Mat &binaryImg);
+  std::vector<cv::Mat> devideImg(const cv::Mat &binaryImg, std::vector<Point> &ps);
   std::vector<cv::Vec4i> detectSegments(const cv::Mat &edgeImg);
   std::vector<Pointd> detectVertexes(const std::vector<cv::Vec4i> &segments);
   Piece roll(const int id, const std::vector<im::Pointd> shape);
+  void writeIDs(const std::vector<im::Point> &ps, cv::Mat &img, int firstID);
 }

@@ -26,10 +26,10 @@ im::Piece::Piece() : Piece(0, {}) {}
 
 /*
 im::Piece::Piece(int id, const std::vector<im::Point> &vertexes, const std::vector<int> &edges2,
-  const std::vector<double> &degs) : id(id), vertexes(vertexes), edges2(edges2), degs(degs) {}
+const std::vector<double> &degs) : id(id), vertexes(vertexes), edges2(edges2), degs(degs) {}
 */
-im::Piece::Piece(int id, const std::vector<std::vector<im::Point>> &vertexes) 
-	: id(id), vertexes(vertexes) {}
+im::Piece::Piece(int id, const std::vector<std::vector<im::Point>> &vertexes)
+  : id(id), vertexes(vertexes) {}
 
 im::Answer::Answer() : Answer(0, {}) {}
 
@@ -39,7 +39,7 @@ void im::hello() {
   std::cout << "hello 今川" << std::endl;
 }
 
-std::vector<cv::Mat> im::devideImg(const cv::Mat &binaryImg) {
+std::vector<cv::Mat> im::devideImg(const cv::Mat &binaryImg, std::vector<Point> &ps) {
 
   // ラべリング
   cv::Mat labels, stats, centroids;
@@ -60,6 +60,8 @@ std::vector<cv::Mat> im::devideImg(const cv::Mat &binaryImg) {
     if (s < 100) {
       continue;
     }
+
+    ps.push_back(im::Point(l + 10, t + h - 10));
 
     // ピース切り出し
     auto pieceImg = binaryImg(cv::Rect(l, t, w, h)).clone();
@@ -300,11 +302,11 @@ N:na xa1 ya1 xa2 ya2 ... xana yana:nb xb1 yb1 xb2 yb2 ...xbna ybna:...
 
 //rollの戻り値確認
 im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
-	im::Piece piece;
+  im::Piece piece;
   //Transfer [pix -> mm]
   double ratio = 55 / (512 * 2.5); //[(mm/pix/mm)]
-  //double ratio = 55 / (512 * 1.0); //[(mm/pix/mm)]
-  //double ratio = 1.0; //[(mm/pix/mm)]
+                                   //double ratio = 55 / (512 * 1.0); //[(mm/pix/mm)]
+                                   //double ratio = 1.0; //[(mm/pix/mm)]
   std::cout << "-----" << std::endl;
   for (im::Pointd &xy : shape) {
     xy.x *= ratio;
@@ -317,24 +319,24 @@ im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
   std::vector<im::Point> tmp_res(len_corn, im::Point(0, 0));
   std::vector<std::vector<im::Point>> result;
 
-	//WARNING!
+  //WARNING!
   for (int corn = 0; corn < len_corn; corn++) {
     double dx = shape[corn].x
       - shape[(corn < len_corn - 1) ? corn + 1 : 0].x;
     double dy = shape[corn].y
       - shape[(corn < len_corn - 1) ? corn + 1 : 0].y;
-		std::cout << "dx:" << dx << std::endl;
+    std::cout << "dx:" << dx << std::endl;
     len_side[corn] = sqrt(dx*dx + dy*dy);
   }
-	/*
-	for(int corn = 0; corn < segments.size(); corn++){
-		cv::Vec4i side = segments[corn];
-		double dx = side[2]-side[0];
-		double dy = side[3]-side[1];
-		len_side[corn] = sqrt(dx*dx+dy*dy)*ratio;
-	}
-	*/
-	
+  /*
+  for(int corn = 0; corn < segments.size(); corn++){
+  cv::Vec4i side = segments[corn];
+  double dx = side[2]-side[0];
+  double dy = side[3]-side[1];
+  len_side[corn] = sqrt(dx*dx+dy*dy)*ratio;
+  }
+  */
+
 
   /*
   >>terms to stop<<
@@ -345,19 +347,19 @@ im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
   1. A point isn't at any grids.
   */
 
-	//std::cout << "dy0:" << shape[0].y << "," << shape[1].y << std::endl;
+  //std::cout << "dy0:" << shape[0].y << "," << shape[1].y << std::endl;
   double dy0 = (shape[1].y - shape[0].y);
-	//std::cout << "dy0:" << dy0 << std::endl;
+  //std::cout << "dy0:" << dy0 << std::endl;
   double theta0 = 0;
-	//std::cout << "len_side[0]:" << len_side[0] << std::endl;
+  //std::cout << "len_side[0]:" << len_side[0] << std::endl;
   if (dy0 != 0) {
-		if(std::abs(dy0) <= len_side[0])
-    	theta0 = acos(dy0 / len_side[0]);
-		else if(dy0 > 0)
-			theta0 = acos(1);
-		else if(dy0 < 0)
-			theta0 = acos(-1);
-		//std::cout << "theta0:" << theta0 << std::endl;
+    if (std::abs(dy0) <= len_side[0])
+      theta0 = acos(dy0 / len_side[0]);
+    else if (dy0 > 0)
+      theta0 = acos(1);
+    else if (dy0 < 0)
+      theta0 = acos(-1);
+    //std::cout << "theta0:" << theta0 << std::endl;
     //cout << len_side[0] << endl;
   }
   else {
@@ -367,12 +369,12 @@ im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
   for (double dy = (int)len_side[0]; dy <= len_side[0] && theta <= PI / 4; dy--) {
     //(dx!=0) ? theta = asin(dx/len_side[0]) : theta = 0;
     theta = acos(dy / len_side[0]);
-		//std::cout << "theta1:" << theta << std::endl;
+    //std::cout << "theta1:" << theta << std::endl;
     dtheta = theta0 - theta;
-		//std::cout << "theta2:" << theta << std::endl;
+    //std::cout << "theta2:" << theta << std::endl;
     //cout << theta0*DP << ":" << theta*DP << ":" << dtheta*DP << endl;
-		int minX = 1.0e9;
-		int minY = 1.0e9;
+    int minX = 1.0e9;
+    int minY = 1.0e9;
     for (int corn = 0; corn < len_corn; corn++) {
       //Rotation matrix
       double x =
@@ -381,50 +383,58 @@ im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
       double y =
         (shape[corn].x - shape[0].x)*sin(dtheta) +
         (shape[corn].y - shape[0].y)*cos(dtheta);
-			//std::cout << "x1:" << x << std::endl;
+      //std::cout << "x1:" << x << std::endl;
       bool flagx = false;
       bool flagy = false;
-			//std::cout << x << "," << y << std::endl;
+      //std::cout << x << "," << y << std::endl;
       if (std::abs(floor(x) - x) < derror) { x = floor(x); flagx = true; }
       if (std::abs(floor(y) - y) < derror) { y = floor(y); flagy = true; }
       if (std::abs(ceil(x) - x) < derror) { x = ceil(x); flagx = true; }
       if (std::abs(ceil(y) - y) < derror) { y = ceil(y); flagy = true; }
-			//std::cout << "x2:" << x << std::endl;
-      if (flagx && flagy){
-				if(x < minX) minX = x;
-				if(y < minY) minY = y;
-				tmp_res[corn] = im::Point(x, y);
-				//std::cout << "res:" << x << "," << y << std::endl;
-			}
+      //std::cout << "x2:" << x << std::endl;
+      if (flagx && flagy) {
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        tmp_res[corn] = im::Point(x, y);
+        //std::cout << "res:" << x << "," << y << std::endl;
+      }
       else break;
 
       if (corn == len_corn - 1) {
-				for(auto &xy:tmp_res){
-					if(minX<0) xy.x -= minX;
-					if(minY<0) xy.y -= minY;
-				}
+        for (auto &xy : tmp_res) {
+          if (minX<0) xy.x -= minX;
+          if (minY<0) xy.y -= minY;
+        }
         result.push_back(tmp_res);
-				//回転追加
-				for(int i=0;i<3;i++){
-					int minX = 1.0e9;
-					int minY = 1.0e9;
-					for(auto &xy:tmp_res){
-						xy.x = xy.x*cos(PI/2)-xy.y*sin(PI/2);
-						xy.y = xy.x*sin(PI/2)+xy.y*cos(PI/2);
-						if(xy.x < minX) minX = xy.x;
-						if(xy.y < minY) minY = xy.y;
-					}
-					for(auto &xy:tmp_res){
-						if(minX<0) xy.x -= minX;
-						if(minY<0) xy.y -= minY;
-					}
-					result.push_back(tmp_res);
-				}
+        //回転追加
+        for (int i = 0; i<3; i++) {
+          int minX = 1.0e9;
+          int minY = 1.0e9;
+          for (auto &xy : tmp_res) {
+            xy.x = xy.x*cos(PI / 2) - xy.y*sin(PI / 2);
+            xy.y = xy.x*sin(PI / 2) + xy.y*cos(PI / 2);
+            if (xy.x < minX) minX = xy.x;
+            if (xy.y < minY) minY = xy.y;
+          }
+          for (auto &xy : tmp_res) {
+            if (minX<0) xy.x -= minX;
+            if (minY<0) xy.y -= minY;
+          }
+          result.push_back(tmp_res);
+        }
       }
     }
   }
-	piece.id = id;
-	piece.vertexes = result;
+  piece.id = id;
+  piece.vertexes = result;
 
   return piece;
+}
+
+void im::writeIDs(const std::vector<im::Point> &ps, cv::Mat &img, int firstID) {
+  for (const auto &p : ps) {
+    cv::putText(img, std::to_string(firstID), cv::Point(p.x, p.y),
+      cv::FONT_HERSHEY_SIMPLEX, 4.0, cv::Scalar(128, 128, 128), 4, CV_AA);
+    firstID++;
+  }
 }
