@@ -83,8 +83,6 @@ int main() {
         cv::imshow(std::to_string(id), pieceImg);  */
     }
 
-
-
     // waiting for input
     // cv::waitKey(0);
 
