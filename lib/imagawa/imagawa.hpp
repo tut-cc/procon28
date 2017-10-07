@@ -39,27 +39,26 @@ namespace im {
   class Piece {
   public:
     Piece();
-    /*
-    Piece(int id, const std::vector<Point> &vertexes,
-    const std::vector<int> &edges2, const std::vector<double> &degs);
-    */
     Piece(int id, const std::vector<std::vector<Point>> &vertexes);
 
     int id;
     std::vector<std::vector<Point>> vertexes;
-
-    /*
-    std::vector<int> edges2;
-    std::vector<double> degs;
-    */
   };
 
   class Answer {
     Answer();
-    Answer(int id, const std::vector<Point> &vertexes);
+    Answer(int id, int index, const im::Point& point);
 
-    int id;
-    std::vector<Point> vertexes;
+    const int id;
+    const int index;
+    const im::Point point;
+  };
+
+  class Hint {
+    Hint();
+    Hint(const std::vector<im::Point>& vertexes);
+
+    const std::vector<im::Point> vertexes;
   };
 
   void hello();
