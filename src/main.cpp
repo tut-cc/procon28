@@ -40,9 +40,10 @@ int main() {
     im::Piece frame;
     std::vector< im::Piece > problem;
 
+    std::vector<std::vector<im::Point>> coordinats_of_pieces_in_mat(imgs.size());
     for(int i = 0; i < imgs.size(); i++) {
         cv::threshold(imgs[i], imgs[i], 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
-        auto pieceImgs = im::devideImg(imgs[i]);
+        auto pieceImgs = im::devideImg(imgs[i], coordinats_of_pieces_in_mat[i]);
 
         int id = 1;
         std::cout << id << ":";
