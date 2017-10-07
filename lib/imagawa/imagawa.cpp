@@ -461,17 +461,19 @@ void im::writeIDs(const std::vector<im::Point> &ps, cv::Mat &img, int firstID) {
 
 static const int W = 5;
 
-static void drawPiece(int id, const std::vector<im::Point> &vertexes, cv::Mat &img) {
+static void drawPiece(int id, const std::vector<im::Point> &vertexes, 
+  const im::Point &d, cv::Mat &img) {
   for (auto i = 0; i < vertexes.size(); i++) {
     auto j = i < vertexes.size() - 1 ? i + 1 : 0;
-    cv::line(img, cv::Point(vertexes[i].x * W, vertexes[i].y * W),
-      cv::Point(vertexes[j].x * W, vertexes[j].y * W), cv::Scalar(0, 0, 255), 2, 8);
+    cv::line(img, cv::Point((vertexes[i].x + d.x) * W, (vertexes[i].y + d.y) * W),
+      cv::Point((vertexes[j].x + d.x) * W, (vertexes[j].y + d.y) * W),
+      cv::Scalar(0, 0, 255), 2, 8);
   }
 
   cv::Point g;
   for (auto vertex : vertexes) {
-    g.x += vertex.x * W;
-    g.y += vertex.y * W;
+    g.x += (vertex.x + d.x) * W;
+    g.y += (vertex.y + d.y) * W;
   }
   g.x /= vertexes.size();
   g.y /= vertexes.size();
@@ -483,7 +485,7 @@ static void drawPiece(int id, const std::vector<im::Point> &vertexes, cv::Mat &i
 void im::showAnswer(const std::vector<im::Answer> &anses, const std::vector<im::Piece> &pieces) {
   cv::Mat img = cv::Mat::zeros(cv::Size(W * 100, W * 64), CV_8UC4);
   for (const auto &ans : anses) {
-    drawPiece(ans.id, pieces[ans.id].vertexes[ans.index], img);
+    drawPiece(ans.id, pieces[ans.id].vertexes[ans.index], ans.point, img);
   }
   cv::namedWindow("answer", CV_WINDOW_AUTOSIZE | CV_WINDOW_FREERATIO);
   cv::imshow("answer", img);
