@@ -353,7 +353,7 @@ im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
   //std::cout << "len_side[0]:" << len_side[0] << std::endl;
 	/*
 	・頂点0,1がx軸に平行に並んでいなけらば->y軸に対する辺の角度を計算
-	・頂点0,1がx軸に平行に並んでいれば->角度は0
+	・頂点0,1がx軸に平行に並んでいれば->角度はPI/4
 	*/
   if (dy0 != 0) {
     if (std::abs(dy0) <= len_side[0])
@@ -368,7 +368,7 @@ im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
     //cout << len_side[0] << endl;
   }
   else {
-    theta0 = 0;
+    theta0 = PI/4;
   }
 
   double theta = 0, dtheta = 0;
