@@ -222,49 +222,72 @@ std::vector<im::Pointd> im::detectVertexes(const std::vector<cv::Vec4i> &segment
 
   // 開始頂点の決定
   auto startI = -1, startJ = -1;
-  auto minD2 = 1.0e9;
+  auto startMinD2 = 1.0e9;
   for (auto i = 0; i < segments.size(); i++) {
     for (auto j = i + 1; j < segments.size(); j++) {
-      if (inters[i][j].d2 < minD2) {
+      if (inters[i][j].d2 < startMinD2) {
         startI = i;
         startJ = j;
-        minD2 = inters[i][j].d2;
+        startMinD2 = inters[i][j].d2;
       }
     }
   }
   inters[startI][startJ].f = inters[startJ][startI].f = true;
 
-  std::vector<im::Pointd> vertexes;
-  vertexes.push_back(inters[startI][startJ].p);
+  // 線分ごとの頂点確定フラグ(下位1/2bit目が左/右側頂点に対応)
+  std::vector<int> xFlgs(segments.size(), 0);
+  xFlgs[startI] = inters[startI][startJ].lr;
+  xFlgs[startJ] = inters[startJ][startI].lr;
 
-  auto i = startI;
-  auto lr = inters[startI][startJ].lr;
-  while (i != startJ) {
-    auto minJ = -1;
-    minD2 = 1.0e9;
-    for (auto j = 0; j < inters.size(); j++) {
-      if (inters[i][j].f || inters[i][j].lr == lr) {
+  // 確定頂点座標リスト
+  std::vector<im::Pointd> verts[2];
+  auto active = 0;
+  int i[] = { startI, startJ };
+  int minJ[] = { -1, -1 };
+  double minD2[] = { 1.0e9, 1.0e9 };
+  auto first = true;
+
+  while (xFlgs[minJ[active]] != 3) {
+    if (!first) {
+      verts[active].push_back(inters[i[active]][minJ[active]].p);
+      i[active] = minJ[active];
+    }
+
+    minJ[active] = -1;
+    minD2[active] = 1.0e9;
+    for (auto j = 0; j < segments.size(); j++) {
+      if (inters[i[active]][j].f || inters[i[active]][j].lr & xFlgs[i[active]]) {
         continue;
       }
 
-      if (inters[i][j].d2 < minD2) {
-        minJ = j;
-        minD2 = inters[i][j].d2;
+      if (inters[i[active]][j].d2 < minD2[active]) {
+        minJ[active] = j;
+        minD2[active] = inters[i[active]][j].d2;
       }
     }
 
-    if (minJ == -1) {
+    if (minJ[active] == -1) {
       std::cout << "NG" << std::endl;
-      return vertexes;
+      return std::vector<im::Pointd>();
     }
 
-    vertexes.push_back(inters[i][minJ].p);
-    inters[i][minJ].f = inters[minJ][i].f = true;
-    lr = inters[minJ][i].lr;
-    i = minJ;
+    if (first) {
+      active = 1;
+      continue;
+    }
+
+    active = minD2[0] < minD2[1] ? 0 : 1;
+    xFlgs[i[active]] |= inters[i[active]][minJ[active]].lr;
+    xFlgs[minJ[active]] |= inters[minJ[active]][i[active]].lr;
+    inters[i[active]][minJ[active]].f = inters[minJ[active]][i[active]].f = true;
   }
 
   std::cout << "OK" << std::endl;
+
+  std::vector<im::Pointd> vertexes;
+  for (auto i = verts[0].size() - 1; i >= 0; i--) {
+    vertexes.push_back(verts[0])
+  }
 
   // 反時計回りだった場合時計回りに修正
   auto li = 0;
@@ -398,12 +421,12 @@ im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
 
       if (corn == len_corn - 1) {
         for (auto &xy : tmp_res) {
-          if (minX<0) xy.x -= minX;
-          if (minY<0) xy.y -= minY;
+          if (minX < 0) xy.x -= minX;
+          if (minY < 0) xy.y -= minY;
         }
         result.push_back(tmp_res);
         //回転追加
-        for (int i = 0; i<3; i++) {
+        for (int i = 0; i < 3; i++) {
           int minX = 1.0e9;
           int minY = 1.0e9;
           for (auto &xy : tmp_res) {
@@ -413,8 +436,8 @@ im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
             if (xy.y < minY) minY = xy.y;
           }
           for (auto &xy : tmp_res) {
-            if (minX<0) xy.x -= minX;
-            if (minY<0) xy.y -= minY;
+            if (minX < 0) xy.x -= minX;
+            if (minY < 0) xy.y -= minY;
           }
           result.push_back(tmp_res);
         }
