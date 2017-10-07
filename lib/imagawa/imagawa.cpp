@@ -299,13 +299,14 @@ N:na xa1 ya1 xa2 ya2 ... xana yana:nb xb1 yb1 xb2 yb2 ...xbna ybna:...
 //For the time being, coordinates is written by [mm]
 
 //rollの戻り値確認
-im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
+im::Piece im::roll(const int id, const std::vector<im::Pointd>& _shape) {
   im::Piece piece;
   //Transfer [pix -> mm]
   double ratio = 210 / (1654 * 2.5); //[(mm/pix/mm)]
                                    //double ratio = 55 / (512 * 1.0); //[(mm/pix/mm)]
                                    //double ratio = 1.0; //[(mm/pix/mm)]
   std::cout << "-----" << std::endl;
+  std::vector<im::Pointd> shape(_shape);
   for (im::Pointd &xy : shape) {
     xy.x *= ratio;
     xy.y *= ratio;
@@ -325,6 +326,7 @@ im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
       - shape[(corn < len_corn - 1) ? corn + 1 : 0].y;
     //std::cout << "dx:" << dx << std::endl;
     len_side[corn] = sqrt(dx*dx + dy*dy);
+  }
   /*
   for(int corn = 0; corn < segments.size(); corn++){
   cv::Vec4i side = segments[corn];
@@ -359,7 +361,7 @@ im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
     if (std::abs(dy0) <= len_side[0])
       theta0 = acos(dy0 / len_side[0]);
 			//PI超える場合
-			if(dx < 0) theta0 += PI;
+			if(dx0 < 0) theta0 += PI;
     else if (dy0 > 0)
       theta0 = acos(1);
     else if (dy0 < 0)

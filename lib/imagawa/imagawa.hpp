@@ -66,6 +66,6 @@ namespace im {
   std::vector<cv::Mat> devideImg(const cv::Mat &binaryImg, std::vector<Point> &ps);
   std::vector<cv::Vec4i> detectSegments(const cv::Mat &edgeImg);
   std::vector<Pointd> detectVertexes(const std::vector<cv::Vec4i> &segments);
-  Piece roll(const int id, const std::vector<im::Pointd> shape);
+  Piece roll(const int id, const std::vector<im::Pointd>& _shape);
   void writeIDs(const std::vector<im::Point> &ps, cv::Mat &img, int firstID);
 }
