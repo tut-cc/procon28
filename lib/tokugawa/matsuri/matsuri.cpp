@@ -102,7 +102,7 @@ class MatsuriCompare
 {
 public:
   // vsの優先度が高ければtrueを返す
-  bool operator() (State vs, State atom)
+  bool operator() (const State& vs, const State& atom) const
   {
     // 全消しを優先
     if (vs.waku.size() == 0) {
@@ -358,9 +358,9 @@ public:
 std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vector<im::Piece>& problem, const std::vector<im::Answer>& hint)
 {
   const int n = problem.size();
-  std::vector<std::priority_queue<State, std::vector<State>, MatsuriCompare>> stacks(n + 1);
+  std::vector<std::multiset<State, MatsuriCompare>> stacks(n + 1);
   State atom(piece2paths(waku));
-  stacks[0].push(atom);
+  stacks[0].insert(atom);
   std::vector<cl::Paths> paths;
   for (const auto& piece : problem) {
     paths.push_back(piece2paths(piece));
@@ -383,7 +383,7 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
       if (stacks[i].size() == 0) {
         continue;
       }
-      State node = stacks[i].top();
+      State node = *stacks[i].rbegin();
       const int uni_size = node.uni.size() == 0 ? 0 : node.uni.front().size();
       const double waku_area = node.waku.size() == 0 ? 0 : std::abs(cl::Area(node.waku.front()));
       std::cerr << "[" << i << "] : " << node.bornus << ", " << node.edges << " - " << uni_size
@@ -402,7 +402,7 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
           end = true;
         }
       }
-      stacks[i].pop();
+      stacks[i].erase(stacks[i].begin());
       for (int j = 0; j < n; ++j) {
         //std::cerr << "\tusing " << j << "-th path" << std::endl;
         if (node.info.set[j]) {
@@ -464,7 +464,10 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
               continue;
             }
             done.insert(next_haiti);
-            stacks[i + 1].push(next);
+            stacks[i + 1].insert(next);
+            if (stacks[i + 1].size() > 100) {
+              stacks[i + 1].erase(stacks[i + 1].begin());
+            }
             //++awawa;
             //cl::Paths tmp;
             //tmp << zurasied_path;
