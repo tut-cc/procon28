@@ -24,10 +24,6 @@ im::Pointd::Pointd(double x, double y) : x(x), y(y) {}
 
 im::Piece::Piece() : Piece(0, {}) {}
 
-/*
-im::Piece::Piece(int id, const std::vector<im::Point> &vertexes, const std::vector<int> &edges2,
-const std::vector<double> &degs) : id(id), vertexes(vertexes), edges2(edges2), degs(degs) {}
-*/
 im::Piece::Piece(int id, const std::vector<std::vector<im::Point>> &vertexes)
   : id(id), vertexes(vertexes) {}
 
