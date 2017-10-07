@@ -224,72 +224,49 @@ std::vector<im::Pointd> im::detectVertexes(const std::vector<cv::Vec4i> &segment
 
   // 開始頂点の決定
   auto startI = -1, startJ = -1;
-  auto startMinD2 = 1.0e9;
+  auto minD2 = 1.0e9;
   for (auto i = 0; i < segments.size(); i++) {
     for (auto j = i + 1; j < segments.size(); j++) {
-      if (inters[i][j].d2 < startMinD2) {
+      if (inters[i][j].d2 < minD2) {
         startI = i;
         startJ = j;
-        startMinD2 = inters[i][j].d2;
+        minD2 = inters[i][j].d2;
       }
     }
   }
   inters[startI][startJ].f = inters[startJ][startI].f = true;
 
-  // 線分ごとの頂点確定フラグ(下位1/2bit目が左/右側頂点に対応)
-  std::vector<int> xFlgs(segments.size(), 0);
-  xFlgs[startI] = inters[startI][startJ].lr;
-  xFlgs[startJ] = inters[startJ][startI].lr;
+  std::vector<im::Pointd> vertexes;
+  vertexes.push_back(inters[startI][startJ].p);
 
-  // 確定頂点座標リスト
-  std::vector<im::Pointd> verts[2];
-  auto active = 0;
-  int i[] = { startI, startJ };
-  int minJ[] = { -1, -1 };
-  double minD2[] = { 1.0e9, 1.0e9 };
-  auto first = true;
-
-  while (xFlgs[minJ[active]] != 3) {
-    if (!first) {
-      verts[active].push_back(inters[i[active]][minJ[active]].p);
-      i[active] = minJ[active];
-    }
-
-    minJ[active] = -1;
-    minD2[active] = 1.0e9;
-    for (auto j = 0; j < segments.size(); j++) {
-      if (inters[i[active]][j].f || inters[i[active]][j].lr & xFlgs[i[active]]) {
+  auto i = startI;
+  auto lr = inters[startI][startJ].lr;
+  while (i != startJ) {
+    auto minJ = -1;
+    minD2 = 1.0e9;
+    for (auto j = 0; j < inters.size(); j++) {
+      if (inters[i][j].f || inters[i][j].lr == lr) {
         continue;
       }
 
-      if (inters[i[active]][j].d2 < minD2[active]) {
-        minJ[active] = j;
-        minD2[active] = inters[i[active]][j].d2;
+      if (inters[i][j].d2 < minD2) {
+        minJ = j;
+        minD2 = inters[i][j].d2;
       }
     }
 
-    if (minJ[active] == -1) {
+    if (minJ == -1) {
       std::cout << "NG" << std::endl;
-      return std::vector<im::Pointd>();
+      return vertexes;
     }
 
-    if (first) {
-      active = 1;
-      continue;
-    }
-
-    active = minD2[0] < minD2[1] ? 0 : 1;
-    xFlgs[i[active]] |= inters[i[active]][minJ[active]].lr;
-    xFlgs[minJ[active]] |= inters[minJ[active]][i[active]].lr;
-    inters[i[active]][minJ[active]].f = inters[minJ[active]][i[active]].f = true;
+    vertexes.push_back(inters[i][minJ].p);
+    inters[i][minJ].f = inters[minJ][i].f = true;
+    lr = inters[minJ][i].lr;
+    i = minJ;
   }
 
   std::cout << "OK" << std::endl;
-
-  std::vector<im::Pointd> vertexes;
-  for (auto i = verts[0].size() - 1; i >= 0; i--) {
-    vertexes.push_back(verts[0])
-  }
 
   // 反時計回りだった場合時計回りに修正
   auto li = 0;
@@ -346,9 +323,8 @@ im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
       - shape[(corn < len_corn - 1) ? corn + 1 : 0].x;
     double dy = shape[corn].y
       - shape[(corn < len_corn - 1) ? corn + 1 : 0].y;
-    std::cout << "dx:" << dx << std::endl;
+    //std::cout << "dx:" << dx << std::endl;
     len_side[corn] = sqrt(dx*dx + dy*dy);
-  }
   /*
   for(int corn = 0; corn < segments.size(); corn++){
   cv::Vec4i side = segments[corn];
@@ -369,18 +345,21 @@ im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
   */
 
   //std::cout << "dy0:" << shape[0].y << "," << shape[1].y << std::endl;
-	//頂点0と頂点1のy幅を取得
+	//頂点0と頂点1のy,x幅を取得
   double dy0 = (shape[1].y - shape[0].y);
+  double dx0 = (shape[1].x - shape[0].x);
   //std::cout << "dy0:" << dy0 << std::endl;
   double theta0 = 0;
   //std::cout << "len_side[0]:" << len_side[0] << std::endl;
 	/*
-	・頂点0,1がy軸に平行に並んでいなけらば->y軸に対する辺の角度を計算
-	・頂点0,1がy軸に平行に並んでいれば->角度は0
+	・頂点0,1がx軸に平行に並んでいなけらば->y軸に対する辺の角度を計算
+	・頂点0,1がx軸に平行に並んでいれば->角度は0
 	*/
   if (dy0 != 0) {
     if (std::abs(dy0) <= len_side[0])
       theta0 = acos(dy0 / len_side[0]);
+			//PI超える場合
+			if(dx < 0) theta0 += PI;
     else if (dy0 > 0)
       theta0 = acos(1);
     else if (dy0 < 0)
@@ -403,7 +382,7 @@ im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
     theta = acos(dy / len_side[0]);
     //std::cout << "theta1:" << theta << std::endl;
 		//初期位置からの回転角度を計算
-    dtheta = theta0 - theta;
+    dtheta = theta - theta0;
     //std::cout << "theta2:" << theta << std::endl;
     //cout << theta0*DP << ":" << theta*DP << ":" << dtheta*DP << endl;
     int minX = 1.0e9;
