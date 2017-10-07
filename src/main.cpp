@@ -1,5 +1,10 @@
 #include "imagawa.hpp"
 #include "tokugawa.hpp"
+
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/opencv.hpp>
+
 #include <iostream>
 #include <string>
 #include <cstdio>
@@ -7,8 +12,8 @@
 
 int main() {
 
-    const string imageName = "image"
-    const string extension = ".bmp";
+    const std::string imageName = "image";
+    const std::string extension = ".bmp";
 
     std::vector< cv::Mat > imgs;
 
@@ -20,19 +25,19 @@ int main() {
     */
     int index = 0;
     while(true) {
-        cv:Mat img = cv::im_read(imageName + to_string(index++) + extension, cv::IMREAD_GRAYSCALE);
+        cv::Mat img = cv::imread(imageName + std::to_string(index++) + extension, cv::IMREAD_GRAYSCALE);
         if(img.empty()) break;
         else imgs.push_back(img);
     }
 
     // test
     for(int i = 0; i < imgs.size(); i++) {
-        cv:imshow(i, imgs[i]);
+        cv::imshow(std::to_string(i), imgs[i]);
     }
 
     /*---- detective of lines and points ----*/
-    vector< vector< im::Point > > frame;
-    vector< vector< im::Point > > problem;
+    im::Piece frame;
+    std::vector< im::Piece > problem;
 
     for(int i = 0; i < imgs.size(); i++) {
         cv::threshold(imgs[i], imgs[i], 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
@@ -41,8 +46,8 @@ int main() {
         int id = 1;
         std::cout << id << ":";
         int color_i = 0;
-        cv::Canny(pieceImg, pieceImg, 50, 200, 3);
-        auto segments = im::detectSegments(pieceImg);
+        cv::Canny(imgs[i], imgs[i], 50, 200, 3);
+        auto segments = im::detectSegments(imgs[i]);
         auto vertexes = im::detectVertexes(segments);
         std::cout << segments.size() << ":" << vertexes.size() << std::endl;
         auto rolltexes = im::roll(id, vertexes); // <-これが1ピース当たりの回転を含めた座標を返します
@@ -54,8 +59,10 @@ int main() {
             }
         }
 
-        if(i == 0)  frame.push_back(rolltexes.vertexes);
-        else        problem.push_back(rolltexes.vertexes);
+        if(i == 0) {
+            rolltexes.vertexes.erase(rolltexes.vertexes.begin() + 1, rolltexes.vertexes.end());
+        }
+        else problem.push_back(rolltexes);
 
         id++;
 
@@ -89,7 +96,7 @@ int main() {
 
     /*----- call a search func -----*/
     // type vector< im::Answer > answers
-    auto answers = tk:search(frame, problem);
+    auto answers = tk::search(frame, problem, {}, 0);
 
     /*----- output answer by GUI -----*/
 
