@@ -99,8 +99,8 @@ static double abs2(double v[]) {
 }
 
 static double dot(const cv::Vec4i &v1, const cv::Vec4i &v2) {
-  double u1[] = { v1[2] - v1[0], v1[3] - v1[1] };
-  double u2[] = { v2[2] - v2[0], v2[3] - v2[1] };
+  double u1[] = { static_cast<double>(v1[2] - v1[0]), static_cast<double>(v1[3] - v1[1]) };
+  double u2[] = { static_cast<double>(v2[2] - v2[0]), static_cast<double>(v2[3] - v2[1]) };
   return dot(u1, u2) / (std::sqrt(abs2(u1)) * std::sqrt(abs2(u2)));
 }
 
@@ -135,9 +135,9 @@ std::vector<cv::Vec4i> im::detectSegments(const cv::Mat &edgeImg) {
       }
 
       // 線分2の左端点と線分1の距離(https://tgws.plus/ul/ul31.html)
-      double p1q1[] = { segs[j][0] - segs[i][0], segs[j][1] - segs[i][1] };
-      double p1p2[] = { segs[i][2] - segs[i][0], segs[i][3] - segs[i][1] };
-      double p2q1[] = { segs[j][0] - segs[i][2], segs[j][1] - segs[i][3] };
+      double p1q1[] = { static_cast<double>(segs[j][0] - segs[i][0]), static_cast<double>(segs[j][1] - segs[i][1]) };
+      double p1p2[] = { static_cast<double>(segs[i][2] - segs[i][0]), static_cast<double>(segs[i][3] - segs[i][1]) };
+      double p2q1[] = { static_cast<double>(segs[j][0] - segs[i][2]), static_cast<double>(segs[j][1] - segs[i][3]) };
       auto dot1 = dot(p1q1, p1p2);
       auto dd =
         dot1 < 0.0 ? abs2(p1q1) :
