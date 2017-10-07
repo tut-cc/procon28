@@ -370,7 +370,7 @@ im::Piece im::roll(const int id, const std::vector<im::Pointd>& _shape) {
     //cout << len_side[0] << endl;
   }
   else {
-    theta0 = 0;
+    theta0 = PI / 4;
   }
 
   double theta = 0, dtheta = 0;
@@ -379,7 +379,7 @@ im::Piece im::roll(const int id, const std::vector<im::Pointd>& _shape) {
 	2.頂点1を回転させ、1グリッド分y軸方向の長さを減らす
 	3.90°回転したら終了
 	*/
-  for (double dy = (int)len_side[0]; dy <= len_side[0] && theta <= PI / 4; dy--) {
+  for (double dy = (int)len_side[0]; dy <= len_side[0] && theta <= PI / 2; dy--) {
     //(dx!=0) ? theta = asin(dx/len_side[0]) : theta = 0;
     theta = acos(dy / len_side[0]);
     //std::cout << "theta1:" << theta << std::endl;
@@ -432,8 +432,9 @@ im::Piece im::roll(const int id, const std::vector<im::Pointd>& _shape) {
           int minX = 1.0e9;
           int minY = 1.0e9;
           for (auto &xy : tmp_res) {
-            xy.x = xy.x*cos(PI / 2) - xy.y*sin(PI / 2);
-            xy.y = xy.x*sin(PI / 2) + xy.y*cos(PI / 2);
+            auto tmpx = xy.x;
+            xy.x = tmpx*cos(PI / 2) - xy.y*sin(PI / 2);
+            xy.y = tmpx*sin(PI / 2) + xy.y*cos(PI / 2);
             if (xy.x < minX) minX = xy.x;
             if (xy.y < minY) minY = xy.y;
           }
