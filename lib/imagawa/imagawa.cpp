@@ -346,9 +346,8 @@ im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
       - shape[(corn < len_corn - 1) ? corn + 1 : 0].x;
     double dy = shape[corn].y
       - shape[(corn < len_corn - 1) ? corn + 1 : 0].y;
-    std::cout << "dx:" << dx << std::endl;
+    //std::cout << "dx:" << dx << std::endl;
     len_side[corn] = sqrt(dx*dx + dy*dy);
-  }
   /*
   for(int corn = 0; corn < segments.size(); corn++){
   cv::Vec4i side = segments[corn];
@@ -369,18 +368,21 @@ im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
   */
 
   //std::cout << "dy0:" << shape[0].y << "," << shape[1].y << std::endl;
-	//頂点0と頂点1のy幅を取得
+	//頂点0と頂点1のy,x幅を取得
   double dy0 = (shape[1].y - shape[0].y);
+  double dx0 = (shape[1].x - shape[0].x);
   //std::cout << "dy0:" << dy0 << std::endl;
   double theta0 = 0;
   //std::cout << "len_side[0]:" << len_side[0] << std::endl;
 	/*
-	・頂点0,1がy軸に平行に並んでいなけらば->y軸に対する辺の角度を計算
-	・頂点0,1がy軸に平行に並んでいれば->角度は0
+	・頂点0,1がx軸に平行に並んでいなけらば->y軸に対する辺の角度を計算
+	・頂点0,1がx軸に平行に並んでいれば->角度は0
 	*/
   if (dy0 != 0) {
     if (std::abs(dy0) <= len_side[0])
       theta0 = acos(dy0 / len_side[0]);
+			//PI超える場合
+			if(dx < 0) theta0 += PI;
     else if (dy0 > 0)
       theta0 = acos(1);
     else if (dy0 < 0)
@@ -403,7 +405,7 @@ im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
     theta = acos(dy / len_side[0]);
     //std::cout << "theta1:" << theta << std::endl;
 		//初期位置からの回転角度を計算
-    dtheta = theta0 - theta;
+    dtheta = theta - theta0;
     //std::cout << "theta2:" << theta << std::endl;
     //cout << theta0*DP << ":" << theta*DP << ":" << dtheta*DP << endl;
     int minX = 1.0e9;
