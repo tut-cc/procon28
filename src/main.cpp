@@ -77,6 +77,7 @@ int main() {
                 minX = std::min(minX, p.x);
               }
               if (maxi < maxX - minX) {
+                maxi = maxX - minX;
                 mpos = i;
               }
             }
