@@ -365,6 +365,12 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
   for (const auto& piece : problem) {
     paths.push_back(piece2paths(piece));
   }
+  //std::cerr << "paths size : " << paths.size() << std::endl;
+  //for (const auto& path : paths) {
+  //  for (const auto& aaa : path) {
+  //    DrawPolygons({ aaa }, 114514, 8931919);
+  //  }
+  //}
   double best_score = 1 << 28;;
   Info best_info;
   int count = 0;
