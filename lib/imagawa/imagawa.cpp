@@ -458,3 +458,33 @@ void im::writeIDs(const std::vector<im::Point> &ps, cv::Mat &img, int firstID) {
     firstID++;
   }
 }
+
+static const int W = 5;
+
+static void drawPiece(int id, const std::vector<im::Point> &vertexes, cv::Mat &img) {
+  for (auto i = 0; i < vertexes.size(); i++) {
+    auto j = i < vertexes.size() - 1 ? i + 1 : 0;
+    cv::line(img, cv::Point(vertexes[i].x * W, vertexes[i].y * W),
+      cv::Point(vertexes[j].x * W, vertexes[j].y * W), cv::Scalar(0, 0, 255), 2, 8);
+  }
+
+  cv::Point g;
+  for (auto vertex : vertexes) {
+    g.x += vertex.x * W;
+    g.y += vertex.y * W;
+  }
+  g.x /= vertexes.size();
+  g.y /= vertexes.size();
+
+  cv::putText(img, std::to_string(id), g + cv::Point(-10, 10),
+    cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(128, 128, 128), 4, CV_AA);
+}
+
+void im::showAnswer(const std::vector<im::Answer> &anses, const std::vector<im::Piece> &pieces) {
+  cv::Mat img = cv::Mat::zeros(cv::Size(W * 100, W * 64), CV_8UC4);
+  for (const auto &ans : anses) {
+    drawPiece(ans.id, pieces[ans.id].vertexes[ans.index], img);
+  }
+  cv::namedWindow("answer", CV_WINDOW_AUTOSIZE | CV_WINDOW_FREERATIO);
+  cv::imshow("answer", img);
+}
