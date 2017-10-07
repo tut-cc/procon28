@@ -325,6 +325,7 @@ im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
       - shape[(corn < len_corn - 1) ? corn + 1 : 0].y;
     //std::cout << "dx:" << dx << std::endl;
     len_side[corn] = sqrt(dx*dx + dy*dy);
+	}
   /*
   for(int corn = 0; corn < segments.size(); corn++){
   cv::Vec4i side = segments[corn];
@@ -359,7 +360,7 @@ im::Piece im::roll(int id, std::vector<im::Pointd> shape) {
     if (std::abs(dy0) <= len_side[0])
       theta0 = acos(dy0 / len_side[0]);
 			//PI超える場合
-			if(dx < 0) theta0 += PI;
+			if(dx0 < 0) theta0 += PI;
     else if (dy0 > 0)
       theta0 = acos(1);
     else if (dy0 < 0)
