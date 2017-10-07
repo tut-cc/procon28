@@ -9,6 +9,7 @@
 #include <string>
 #include <cstdio>
 #include <vector>
+#include <algorithm>
 
 int main() {
 
@@ -60,7 +61,19 @@ int main() {
         }
 
         if(i == 0) {
-            rolltexes.vertexes.erase(rolltexes.vertexes.begin() + 1, rolltexes.vertexes.end());
+            int mpos = -1;
+            int maxi = -1;
+            for(const auto& ver : rolltexes.vertexes) {
+                int minX = 1000000, maxX = -1;
+                for(const auto& p : ver) {
+                    maxX = std::max(maxX, p.x);
+                    minX = std::min(minX, p.x);
+                }
+                if(maxi < maxX - minX) {
+                    mpos = i;
+                }
+            }
+            rolltexes.vertexes = {rolltexes.vertexes[mpos]};
         }
         else problem.push_back(rolltexes);
 
