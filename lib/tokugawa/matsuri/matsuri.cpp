@@ -552,6 +552,5 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
   for (int i = 0; i < n; ++i) {
     ans.push_back(im::Answer(problem[i].id, best_info.indexes[i], best_info.haiti[i]));
   }
-  printf("bbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
   return ans;
 }
