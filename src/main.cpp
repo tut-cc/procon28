@@ -15,11 +15,8 @@
 std::vector< im::Piece > getShapeHints();
 void QReader(int device_id);
 
-int main() {
-  /*
-  QReader(0);
-  exit(1);
-  */
+void using_imagawa()
+{
   const std::string imageName = "image";
   const std::string extension = ".bmp";
 
@@ -28,8 +25,8 @@ int main() {
 
   /*
   var index
-      - 0     : frame image
-      - non 0 : piece images
+  - 0     : frame image
+  - non 0 : piece images
   */
   int index = 0;
   while (true) {
@@ -120,18 +117,18 @@ int main() {
     cv::cvtColor(pieceImg, pieceImg, CV_GRAY2BGR);
     for (auto &segment : segments) {
 
-        //端点表示
-        //cv::circle(pieceImg, cv::Point(segment[0], segment[1]), 5, cv::Scalar(255, 255, 255), -1, 8, 0);
-        //cv::circle(pieceImg, cv::Point(segment[2], segment[3]), 5, cv::Scalar(255, 255, 255), -1, 8, 0);
+    //端点表示
+    //cv::circle(pieceImg, cv::Point(segment[0], segment[1]), 5, cv::Scalar(255, 255, 255), -1, 8, 0);
+    //cv::circle(pieceImg, cv::Point(segment[2], segment[3]), 5, cv::Scalar(255, 255, 255), -1, 8, 0);
 
-        cv::line(pieceImg, cv::Point(segment[0], segment[1]),
-        cv::Point(segment[2], segment[3]), cv::Scalar(color_i, color_i, 255), 2, 8);
+    cv::line(pieceImg, cv::Point(segment[0], segment[1]),
+    cv::Point(segment[2], segment[3]), cv::Scalar(color_i, color_i, 255), 2, 8);
     }
 
     for (auto &vertex : vertexes) {
-      if (vertex.x == -1) continue;
-      cv::circle(pieceImg, cv::Point(vertex.x, vertex.y), 5, cv::Scalar(color_i, 255, color_i), -1, 8, 0);
-      color_i += 20;
+    if (vertex.x == -1) continue;
+    cv::circle(pieceImg, cv::Point(vertex.x, vertex.y), 5, cv::Scalar(color_i, 255, color_i), -1, 8, 0);
+    color_i += 20;
     }
 
     cv::resize(pieceImg, pieceImg, cv::Size(), 0.5, 0.5);
@@ -149,6 +146,47 @@ int main() {
 
   /*----- output answer by GUI -----*/
   cv::waitKey(0);
+}
+
+int main() {
+  /*
+  QReader(0);
+  exit(1);
+  */
+
+  // load hints
+  std::string path;
+  std::cerr << "ヒントファイルの場所を入力してください : ";
+  std::cin >> path;
+  std::ifstream ifs(path);
+
+  im::Piece frame;
+  int n;
+  std::cin >> n;
+  std::vector<im::Point> wa;
+  int m;
+  std::cin >> m;
+  for (int i = 0; i < m; ++i) {
+    int x, y;
+    std::cin >> x >> y;
+    wa.push_back(im::Point(x, y));
+  }
+  frame = im::Piece(-1, { wa });
+  --n;
+  std::vector<im::Piece> problem;
+  for (int i = 0; i < n; ++i) {
+    int l;
+    std::cin >> l;
+    std::vector<im::Point> vec;
+    for (int j = 0; j < l; ++j) {
+      int x, y;
+      std::cin >> x >> y;
+      vec.push_back(im::Point(x, y));
+    }
+    problem.push_back(im::Piece(i, { vec }));
+  }
+
+  auto answers = tk::search(frame, problem, {}, 0);
 }
 
 static int offset_id = 1000;
