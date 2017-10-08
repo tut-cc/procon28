@@ -716,11 +716,11 @@ im::Piece im::easy_roll(const int id, const std::vector<im::Pointd>& _shape) {
   std::vector<im::Pointd> shape(_shape);
 
   int len_corn = shape.size(); //角の数
-  std::vector<im::Point> tmp_res(len_corn, im::Point(0, 0)); 
+  std::vector<im::Point> tmp_res; 
   std::vector<std::vector<im::Point>> result;
 
 	for(auto &xy:shape){
-		tmp_res.push_back((int)xy.x, (int)xy.y);
+		tmp_res.push_back(im::Point((int)xy.x, (int)xy.y));
 	}
 	result.push_back(tmp_res);
 	//90°回転x3
