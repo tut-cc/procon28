@@ -175,7 +175,6 @@ int main() {
     wa.push_back(im::Point(x, y));
   }
   frame = im::Piece(-1, { wa });
-  --n;
   std::vector<im::Piece> problem;
   for (int i = 0; i < n; ++i) {
     int l;

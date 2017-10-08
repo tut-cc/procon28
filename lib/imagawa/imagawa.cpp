@@ -315,11 +315,11 @@ im::Piece im::roll(const int id, const std::vector<im::Pointd>& _shape) {
 
   std::cout << "-----" << std::endl;
   std::vector<im::Pointd> shape(_shape);
-  for (im::Pointd &xy : shape) {
-    xy.x *= ratio;
-    xy.y *= ratio;
-    //std::cout << xy.x << "," << xy.y << std::endl;
-  }
+  //for (im::Pointd &xy : shape) {
+  //  xy.x *= ratio;
+  //  xy.y *= ratio;
+  //  //std::cout << xy.x << "," << xy.y << std::endl;
+  //}
 
   int len_corn = shape.size(); //角の数
   std::vector<double> len_side(len_corn, 0); //辺の長さ
