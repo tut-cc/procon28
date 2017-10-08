@@ -726,7 +726,7 @@ im::Piece im::easy_roll(const int id, const std::vector<im::Pointd>& _shape) {
 			if(minX > j*xy.x) minX = j*xy.x;
 		}
 		for (auto &xy : tmp_res) {
-			if(minX < 0) xy -= minX;
+			if(minX < 0) xy.x -= minX;
 		}
 		result.push_back(tmp_res);
 		//90°回転x3
