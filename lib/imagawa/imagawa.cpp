@@ -308,7 +308,7 @@ im::Piece im::roll(const int id, const std::vector<im::Pointd>& _shape) {
 	double derror = 0.5;
 	 if(shape.size()<6){
  	   derror = 0.38;
- 	 }else if(shape.size()<8){
+ 	 }else if(shape.size()<7){
  	   derror = 0.45;
  	 }else{
  	   derror = 0.48;
