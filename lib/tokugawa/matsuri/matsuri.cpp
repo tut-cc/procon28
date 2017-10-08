@@ -160,6 +160,8 @@ static void test_degree()
   }
 }
 
+const double EPS = 3;
+
 static auto cut_waku(const cl::Paths& waku, const cl::Path& path)
 {
   // waku から path を削り取る
@@ -174,8 +176,8 @@ static auto cut_waku(const cl::Paths& waku, const cl::Path& path)
     std::sort(next_waku.begin(), next_waku.end(), [](const auto& l, const auto& r) {
       return std::abs(cl::Area(l)) > std::abs(cl::Area(r));
     });
-    // 誤差を考え、面積15以下は許容する。
-    dame |= std::abs(cl::Area(next_waku[1])) > 15;
+    // 誤差を考え、面積x以下は許容する。
+    dame |= std::abs(cl::Area(next_waku[1])) > EPS;
     next_waku.erase(next_waku.begin() + 1, next_waku.end());
   }
   // ぴったりハマるところがあればボーナスとしてカウント
@@ -228,8 +230,8 @@ static auto patch_uni(const cl::Paths& uni, const cl::Path& path)
     std::sort(next_uni.begin(), next_uni.end(), [](const auto& l, const auto& r) {
       return std::abs(cl::Area(l)) > std::abs(cl::Area(r));
     });
-    // 誤差を考え、面積15以下は許容する。
-    dame |= std::abs(cl::Area(next_uni[1])) > 15;
+    // 誤差を考え、面積x以下は許容する。
+    dame |= std::abs(cl::Area(next_uni[1])) > EPS;
     next_uni.erase(next_uni.begin() + 1, next_uni.end());
   }
   // 一辺の長さが4グリッド弱以下ならdameフラグ
@@ -249,8 +251,8 @@ static auto patch_uni(const cl::Paths& uni, const cl::Path& path)
   cl::Paths dst;
   intersecter.Execute(cl::ctIntersection, dst, cl::pftNonZero, cl::pftNonZero);
   for (const auto& v : dst) {
-    // 誤差を考え、面積15以下は許容する。
-    dame |= std::abs(cl::Area(v)) > 15;
+    // 誤差を考え、面積x以下は許容する。
+    dame |= std::abs(cl::Area(v)) > EPS;
   }
   // ぴったりハマるところがあればボーナスとしてカウント
   int count = 0;
