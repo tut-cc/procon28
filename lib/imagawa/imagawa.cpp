@@ -712,3 +712,38 @@ im::Piece im::hint_roll(const int id, const std::vector<im::Pointd>& _shape) {
 
   return piece;
 }
+
+im::Piece im::easy_roll(const int id, const std::vector<im::Pointd>& _shape) {
+  im::Piece piece;
+  std::vector<im::Pointd> shape(_shape);
+
+  std::vector<im::Point> tmp_res(len_corn, im::Point(0, 0)); 
+  std::vector<std::vector<im::Point>> result;
+
+	for(auto &xy:shape){
+		tmp_res.push_back((int)xy.x, (int)xy.y);
+	}
+	result.push_back(tmp_res);
+	//90°回転x3
+	for (int i = 0; i < 3; i++) {
+		int minX = 1.0e9;
+		int minY = 1.0e9;
+		for (auto &xy : tmp_res) {
+			auto tmpy = xy.y;
+			xy.y = tmpy*cos(PI / 2) - xy.x*sin(PI / 2);
+			xy.x = tmpy*sin(PI / 2) + xy.x*cos(PI / 2);
+			if (xy.x < minX) minX = xy.x;
+			if (xy.y < minY) minY = xy.y;
+		}
+		for (auto &xy : tmp_res) {
+			if (minX < 0) xy.x -= minX;
+			if (minY < 0) xy.y -= minY;
+		}
+		result.push_back(tmp_res);
+	}
+}
+piece.id = id;
+piece.vertexes = result;
+
+return piece;
+}
