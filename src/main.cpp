@@ -185,8 +185,28 @@ int main() {
       ifs >> x >> y;
       vec.push_back(im::Pointd(x, y));
     }
-    auto ret = im::roll(i, vec);
-    problem.push_back(ret);
+    std::vector< std::vector< im::Point >  > newPoints;
+    auto rolltexes = im::roll(i, vec);
+    for (const auto& ver : rolltexes.vertexes) {
+      int minX = 1000000, maxX = -1;
+      for (const auto& p : ver) {
+        maxX = std::max(maxX, p.x);
+        minX = std::min(minX, p.x);
+      }
+
+      std::vector< im::Point > newPoint;
+      int midX = (maxX - minX) / 2;
+      for (const auto& p : ver) {
+        int newX;
+        int dif = abs(p.x - midX);
+        if (p.x > midX)    newX = p.x - dif * 2;
+        else              newX = p.x + dif * 2;
+        newPoint.push_back(im::Point(newX, p.y));
+      }
+      newPoints.push_back(newPoint);
+    }
+    rolltexes.vertexes.insert(rolltexes.vertexes.end(), newPoints.begin(), newPoints.end());
+    problem.push_back(rolltexes);
   }
 
   auto answers = tk::search(frame, problem, {}, 0);
