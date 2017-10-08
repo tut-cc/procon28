@@ -628,8 +628,6 @@ im::Piece im::hint_roll(const int id, const std::vector<im::Pointd>& _shape) {
       theta0 = acos(-1);
     //std::cout << "theta0:" << theta0 << std::endl;
     //cout << len_side[0] << endl;
-  }
-  else {
     theta0 = PI / 4;
   }
 
@@ -717,6 +715,7 @@ im::Piece im::easy_roll(const int id, const std::vector<im::Pointd>& _shape) {
   im::Piece piece;
   std::vector<im::Pointd> shape(_shape);
 
+  int len_corn = shape.size(); //角の数
   std::vector<im::Point> tmp_res(len_corn, im::Point(0, 0)); 
   std::vector<std::vector<im::Point>> result;
 
@@ -741,9 +740,8 @@ im::Piece im::easy_roll(const int id, const std::vector<im::Pointd>& _shape) {
 		}
 		result.push_back(tmp_res);
 	}
-}
-piece.id = id;
-piece.vertexes = result;
+	piece.id = id;
+	piece.vertexes = result;
 
 return piece;
 }
