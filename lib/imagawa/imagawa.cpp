@@ -708,40 +708,42 @@ im::Piece im::hint_roll(const int id, const std::vector<im::Pointd>& _shape) {
   piece.id = id;
   piece.vertexes = result;
 
-  return piece;
+	return piece;
 }
 
 im::Piece im::easy_roll(const int id, const std::vector<im::Pointd>& _shape) {
-  im::Piece piece;
-  std::vector<im::Pointd> shape(_shape);
+	im::Piece piece;
+	std::vector<im::Pointd> shape(_shape);
 
-  int len_corn = shape.size(); //角の数
-  std::vector<im::Point> tmp_res; 
-  std::vector<std::vector<im::Point>> result;
+	int len_corn = shape.size(); //角の数
+	std::vector<im::Point> tmp_res; 
+	std::vector<std::vector<im::Point>> result;
 
-	for(auto &xy:shape){
-		tmp_res.push_back(im::Point((int)xy.x, (int)xy.y));
-	}
-	result.push_back(tmp_res);
-	//90°回転x3
-	for (int i = 0; i < 3; i++) {
-		int minX = 1.0e9;
-		int minY = 1.0e9;
-		for (auto &xy : tmp_res) {
-			auto tmpy = xy.y;
-			xy.y = tmpy*cos(PI / 2) - xy.x*sin(PI / 2);
-			xy.x = tmpy*sin(PI / 2) + xy.x*cos(PI / 2);
-			if (xy.x < minX) minX = xy.x;
-			if (xy.y < minY) minY = xy.y;
-		}
-		for (auto &xy : tmp_res) {
-			if (minX < 0) xy.x -= minX;
-			if (minY < 0) xy.y -= minY;
+	for(int j=1;j>0;j*=-1){
+		for(auto &xy:shape){
+			tmp_res.push_back(im::Point((int)j*xy.x, (int)xy.y));
 		}
 		result.push_back(tmp_res);
+		//90°回転x3
+		for (int i = 0; i < 3; i++) {
+			int minX = 1.0e9;
+			int minY = 1.0e9;
+			for (auto &xy : tmp_res) {
+				auto tmpy = xy.y;
+				xy.y = tmpy*cos(PI / 2) - xy.x*sin(PI / 2);
+				xy.x = tmpy*sin(PI / 2) + xy.x*cos(PI / 2);
+				if (xy.x < minX) minX = xy.x;
+				if (xy.y < minY) minY = xy.y;
+			}
+			for (auto &xy : tmp_res) {
+				if (minX < 0) xy.x -= minX;
+				if (minY < 0) xy.y -= minY;
+			}
+			result.push_back(tmp_res);
+		}
 	}
 	piece.id = id;
 	piece.vertexes = result;
 
-return piece;
+	return piece;
 }
