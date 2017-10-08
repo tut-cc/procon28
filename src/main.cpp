@@ -148,6 +148,7 @@ int main() {
   auto answers = tk::search(frame, problem, {}, 0);
 
   /*----- output answer by GUI -----*/
+  im::showAnswer(answers, problem);
   cv::waitKey(0);
 }
 
