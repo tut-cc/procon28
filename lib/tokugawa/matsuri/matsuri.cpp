@@ -380,9 +380,9 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
   done.insert(atom.info.haiti);
   bool end = false;
   for (int g = 0;; ++g) {
-      if(g == 1) {
-          break;
-      }
+    if (g == 1) {
+      break;
+    }
     std::cerr << "---- " << g << " GENERATION ----" << std::endl;
     for (int i = 0; i <= n; ++i) {
       if (stacks[i].size() == 0) {
