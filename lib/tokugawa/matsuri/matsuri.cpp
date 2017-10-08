@@ -255,11 +255,13 @@ static auto cut_waku(const cl::Paths& waku, const cl::Path& path)
     }
   }
   // ピースの最小角よりも小さな角ができたらdameフラグを立てる
-  for (int i = 1; i <= waku.front().size(); ++i) {
-    auto prev = waku.front()[i - 1];
-    auto vert = waku.front()[i % waku.front().size()];
-    auto next = waku.front()[(i + 1) % waku.front().size()];
-    auto orientation = cl::Orientation(waku.front());
+  const auto& path = waku.front();
+  const int n = path.size();
+  for (int i = 0; i < path.size(); ++i) {
+    auto prev = path[(i - 1 + n) % n];
+    auto vert = path[i];
+    auto next = path[(i + 1) % n];
+    auto orientation = cl::Orientation(path);
     auto deg = degree(prev, vert, next, orientation);
     if (deg < min_deg) {
       dame = true;
@@ -387,15 +389,15 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
     paths.push_back(piece2paths(piece));
   }
   for (const auto &path : paths) {
-    auto orientation = cl::Orientation(path.front());
-    for (int i = 0; i < path.front().size(); ++i) {
-      auto prev = path.front()[i - 1];
-      auto vert = path.front()[i % path.size()];
-      auto next = path.front()[(i + 1) % path.size()];
+    const cl::Path& one = path.front();
+    auto orientation = cl::Orientation(one);
+    const int m = one.size();
+    for (int i = 0; i < m; ++i) {
+      auto prev = one[(i - 1 + m) % m];
+      auto vert = one[i];
+      auto next = one[(i + 1) % m];
       auto deg = degree(prev, vert, next, orientation);
-      if (deg < min_deg) {
-        min_deg = deg;
-      }
+      min_deg = std::min(min_deg, deg);
     }
   }
   //std::cerr << "paths size : " << paths.size() << std::endl;
