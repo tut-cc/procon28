@@ -373,6 +373,8 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
   //}
   double best_score = 1 << 28;;
   Info best_info;
+  cl::Paths best_waku;
+  cl::Paths best_uni;
   int count = 0;
   std::set<std::vector<im::Point>, PointVecCompare> done;
   done.insert(atom.info.haiti);
@@ -392,6 +394,8 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
       if (best_score > score) {
         best_score = score;
         best_info = node.info;
+        best_waku = node.waku;
+        best_uni = node.uni;
         ++count;
         std::cerr << "(" << count << ") best score is renewed! : " << best_score << " at " << i << std::endl;
         if (count % 10 == 0 || i == n) {
@@ -485,6 +489,8 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
     if (end) {
       break;
     }
+    DrawPolygons(best_waku, 0x160000FF, 0x600000FF);
+    DrawPolygons(best_uni, 0x20FFFF00, 0x30FF0000);
   }
   for (int i = 0; i < problem.size(); ++i) {
     std::cerr << "(" << i << " - " << best_info.indexes[i] << ") [" << (best_info.set[i] ? "x" : " ") << "] : " << best_info.haiti[i].x << " " << best_info.haiti[i].y << std::endl;

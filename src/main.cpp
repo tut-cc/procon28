@@ -26,7 +26,7 @@ int main() {
     */
     int index = 0;
     while(true) {
-        cv::Mat img = cv::imread(imageName + std::to_string(index++) + extension, cv::IMREAD_GRAYSCALE);
+        cv::Mat img = cv::imread("/Users/Yuuki/Documents/Programming/procon/procon28/build/src/" + imageName + std::to_string(index++) + extension, cv::IMREAD_GRAYSCALE);
         if(img.empty()) break;
         else imgs.push_back(img);
     }
@@ -47,6 +47,11 @@ int main() {
     std::vector<std::vector<im::Point>> coordinats_of_pieces_in_mat(imgs.size());
     int id = 1;
     for(int i = 0; i < imgs.size(); i++) {
+        if (i == 0) {
+            auto cutImg = imgs[i](cv::Rect(20, 20, imgs[i].cols - 40, imgs[i].rows - 40)).clone();
+            imgs[i] = std::move(cutImg);
+        }
+
         cv::threshold(imgs[i], imgs[i], 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
         auto pieceImgs = im::devideImg(imgs[i], coordinats_of_pieces_in_mat[i]);
 
@@ -84,7 +89,29 @@ int main() {
             rolltexes.vertexes = { rolltexes.vertexes[mpos] };
             frame = rolltexes;
           }
-          else problem.push_back(rolltexes);
+          else {
+              std::vector< std::vector< im::Point >  > newPoints;
+              for(const auto& ver: rolltexes.vertexes) {
+                  int minX = 1000000, maxX = -1;
+                  for(const auto& p: ver) {
+                      maxX = std::max(maxX, p.x);
+                      minX = std::min(minX, p.x);
+                  }
+
+                  std::vector< im::Point > newPoint;
+                  int midX = (maxX - minX) / 2;
+                  for(const auto& p: ver) {
+                      int newX;
+                      int dif = abs(p.x - midX);
+                      if(p.x > midX)    newX = p.x - dif * 2;
+                      else              newX = p.x + dif * 2;
+                      newPoint.push_back(im::Point(newX, p.y));
+                  }
+                  newPoints.push_back(newPoint);
+              }
+              rolltexes.vertexes.insert(rolltexes.vertexes.end(), newPoints.begin(), newPoints.end());
+              problem.push_back(rolltexes);
+          }
 
           id++;
         }
