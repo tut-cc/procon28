@@ -255,13 +255,13 @@ static auto cut_waku(const cl::Paths& waku, const cl::Path& path)
     }
   }
   // ピースの最小角よりも小さな角ができたらdameフラグを立てる
-  const auto& path = waku.front();
-  const int n = path.size();
-  for (int i = 0; i < path.size(); ++i) {
-    auto prev = path[(i - 1 + n) % n];
-    auto vert = path[i];
-    auto next = path[(i + 1) % n];
-    auto orientation = cl::Orientation(path);
+  const auto& _path = waku.front();
+  const int n = _path.size();
+  for (int i = 0; i < n; ++i) {
+    auto prev = _path[(i - 1 + n) % n];
+    auto vert = _path[i];
+    auto next = _path[(i + 1) % n];
+    auto orientation = cl::Orientation(_path);
     auto deg = degree(prev, vert, next, orientation);
     if (deg < min_deg) {
       dame = true;
