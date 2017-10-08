@@ -4,6 +4,8 @@
 #include <bitset>
 #include <cmath>
 #include <fstream>
+#include <map>
+
 
 const int MAX_NUM_OF_PEICES = 50;
 const int TATE = 65;
@@ -183,6 +185,7 @@ static auto cut_waku(const cl::Paths& waku, const cl::Path& path)
   }
   // ぴったりハマるところがあればボーナスとしてカウント
   int count = 0;
+  bool flag = 0;
   if (waku.size()) {
     std::set<std::vector<std::pair<cl::cInt, cl::cInt>>> set;
     for (int i = 0; i < path.size(); ++i) {
@@ -211,6 +214,29 @@ static auto cut_waku(const cl::Paths& waku, const cl::Path& path)
       vec.push_back(rp);
       if (set.count(vec)) {
         ++count;
+        flag = 1;
+      }
+    }
+  }
+
+  if(waku.size()) {
+    std::map< std::pair< int, int >, double > degs;
+    bool ori = cl::Orientation(waku.front());
+    auto v = waku.front();
+    int n = v.size();
+    for(int i = 0; i < v.size(); i++) {
+      degs[std::make_pair(v[i].X, v[i].Y)] = degree(v[(i - 1 + n) % n], v[i], v[(i + 1) % n], ori);
+    }
+    int m = path.size();
+    ori = cl::Orientation(path);
+    for(int i = 0; i < m; i++) {
+      auto p = std::make_pair(path[i].X, path[i].Y);
+      if(degs.count(p)) {
+        double deg = degree(path[(i - 1 + m) % m], path[i], path[(i + 1) % m], ori);
+        if(fabs(deg - degs[p]) < 1e-3) {
+          count++;
+
+        }
       }
     }
   }
@@ -266,40 +292,7 @@ static auto patch_uni(const cl::Paths& uni, const cl::Path& path)
     // 誤差を考え、面積x以下は許容する。
     dame |= std::abs(cl::Area(v)) > EPS;
   }
-  // ぴったりハマるところがあればボーナスとしてカウント
-  int count = 0;
-  if (uni.size()) {
-    std::set<std::vector<std::pair<cl::cInt, cl::cInt>>> set;
-    for (int i = 0; i < path.size(); ++i) {
-      auto left = path[i];
-      auto right = path[(i + 1) % path.size()];
-      auto lp = std::make_pair(left.X, left.Y);
-      auto rp = std::make_pair(right.X, right.Y);
-      if (lp > rp) {
-        std::swap(lp, rp);
-      }
-      std::vector<std::pair<cl::cInt, cl::cInt>> vec(2);
-      vec.push_back(lp);
-      vec.push_back(rp);
-      set.insert(vec);
-    }
-    for (int i = 0; i < uni.front().size(); ++i) {
-      auto left = uni.front()[i];
-      auto right = uni.front()[(i + 1) % uni.front().size()];
-      auto lp = std::make_pair(left.X, left.Y);
-      auto rp = std::make_pair(right.X, right.Y);
-      if (lp > rp) {
-        std::swap(lp, rp);
-      }
-      std::vector<std::pair<cl::cInt, cl::cInt>> vec(2);
-      vec.push_back(lp);
-      vec.push_back(rp);
-      if (set.count(vec)) {
-        ++count;
-      }
-    }
-  }
-  return std::tuple<bool, int, cl::Paths>(dame, count, next_uni);
+  return std::tuple<bool, int, cl::Paths>(dame, 0, next_uni);
 }
 
 #include <opencv2/core/core.hpp>
@@ -397,7 +390,7 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
   //    DrawPolygons({ aaa }, 114514, 8931919);
   //  }
   //}
-  double best_score = 1 << 28;;
+  double best_score = 1 << 28;
   Info best_info;
   cl::Paths best_waku;
   cl::Paths best_uni;
@@ -406,7 +399,7 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
   done.insert(atom.info.haiti);
   bool end = false;
   for (int g = 0;; ++g) {
-    if (g == 1) {
+    if(g == 1) {
       break;
     }
     std::cerr << "---- " << g << " GENERATION ----" << std::endl;
