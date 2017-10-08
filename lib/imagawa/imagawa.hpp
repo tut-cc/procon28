@@ -68,6 +68,9 @@ namespace im {
   std::vector<cv::Vec4i> detectSegments(const cv::Mat &edgeImg);
   std::vector<Pointd> detectVertexes(const std::vector<cv::Vec4i> &segments);
   Piece roll(const int id, const std::vector<im::Pointd>& _shape);
-  void writeIDs(const std::vector<im::Point> &ps, cv::Mat &img, int firstID);
-  void showAnswer(const std::vector<im::Answer> &anses, const std::vector<im::Piece> &pieces);
+  void writeIDs(const std::vector<Point> &ps, cv::Mat &img, int firstID);
+  void showAnswer(const std::vector<Answer> &anses, const std::vector<Piece> &pieces);
+
+  bool cmpPieces(const std::vector<Point> &p1, const std::vector<Point> &p2);
+  std::vector<Point> readShape();
 }

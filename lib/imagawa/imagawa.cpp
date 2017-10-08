@@ -506,3 +506,74 @@ void im::showAnswer(const std::vector<im::Answer> &anses, const std::vector<im::
   cv::namedWindow("answer", CV_WINDOW_AUTOSIZE | CV_WINDOW_FREERATIO);
   cv::imshow("answer", img);
 }
+
+struct Edge {
+  Edge(im::Point p1, im::Point p2, int id) : p1(p1), p2(p2), id(id),
+    d2((p2.x - p1.x) * (p2.x - p1.x) + (p2.y - p1.y) * (p2.y - p1.y)) {}
+
+  bool operator<(const Edge &edge) const {
+    return d2 < edge.d2;
+  }
+
+  im::Point p1, p2;
+  int id;
+  double d2;
+};
+
+std::vector<Edge> verts2edges(const std::vector<im::Point> &verts) {
+  std::vector<Edge> edges;
+  for (auto i = 0; i < verts.size(); i++) {
+    edges.push_back(Edge(verts[i], verts[i < verts.size() - 1 ? i + 1 : 0], i));
+  }
+  return edges;
+}
+
+bool im::cmpPieces(const std::vector<im::Point> &p1, const std::vector<im::Point> &p2) {
+  if (p1.size() != p2.size()) {
+    return false;
+  }
+
+  auto e1 = verts2edges(p1);
+  auto e2 = verts2edges(p2);
+
+  auto n = e1.size();
+  for (auto i = 0; i < n; i++) {
+    bool eq = true;
+    for (auto j = 0; j < n; j++) {
+      if (std::abs(e1[(i + j) % n].d2 - e2[j].d2) >= 1.0e-9) {
+        eq = false;
+        break;
+      }
+    }
+    if (eq) {
+      return true;
+    }
+
+    eq = true;
+    for (auto j = 0; j < n; j++) {
+      if (std::abs(e1[(i + j) % n].d2 - e2[n - j - 1].d2) >= 1.0e-9) {
+        eq = false;
+        break;
+      }
+    }
+    if (eq) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+std::vector<im::Point> im::readShape() {
+  std::vector<im::Point> verts;
+
+  int n;
+  std::cin >> n;
+  for (auto i = 0; i < n; i++) {
+    im::Point vert;
+    std::cin >> vert.x >> vert.y;
+    verts.push_back(vert);
+  }
+
+  return verts;
+}
