@@ -406,7 +406,7 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
           end = true;
         }
       }
-      stacks[i].erase(stacks[i].begin());
+      stacks[i].erase(std::prev(stacks[i].end()));
       for (int j = 0; j < n; ++j) {
         //std::cerr << "\tusing " << j << "-th path" << std::endl;
         if (node.info.set[j]) {
