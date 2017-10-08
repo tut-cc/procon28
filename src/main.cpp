@@ -165,13 +165,13 @@ int main() {
 
   im::Piece frame;
   int n;
-  std::cin >> n;
+  ifs >> n;
   std::vector<im::Point> wa;
   int m;
-  std::cin >> m;
+  ifs >> m;
   for (int i = 0; i < m; ++i) {
     int x, y;
-    std::cin >> x >> y;
+    ifs >> x >> y;
     wa.push_back(im::Point(x, y));
   }
   frame = im::Piece(-1, { wa });
@@ -179,11 +179,11 @@ int main() {
   std::vector<im::Piece> problem;
   for (int i = 0; i < n; ++i) {
     int l;
-    std::cin >> l;
+    ifs >> l;
     std::vector<im::Point> vec;
     for (int j = 0; j < l; ++j) {
       int x, y;
-      std::cin >> x >> y;
+      ifs >> x >> y;
       vec.push_back(im::Point(x, y));
     }
     problem.push_back(im::Piece(i, { vec }));
