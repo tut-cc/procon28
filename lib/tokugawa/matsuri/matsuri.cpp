@@ -161,6 +161,7 @@ static void test_degree()
 }
 
 const double EPS = 3;
+static double min_deg = 2 * PI;
 
 static auto cut_waku(const cl::Paths& waku, const cl::Path& path)
 {
@@ -211,6 +212,17 @@ static auto cut_waku(const cl::Paths& waku, const cl::Path& path)
       if (set.count(vec)) {
         ++count;
       }
+    }
+  }
+  // ピースの最小角よりも小さな角ができたらdameフラグを立てる
+  for (int i = 1; i <= waku.front().size(); ++i) {
+    auto prev = waku.front()[i - 1];
+    auto vert = waku.front()[i % waku.front().size()];
+    auto next = waku.front()[(i + 1) % waku.front().size()];
+    auto orientation = cl::Orientation(waku.front());
+    auto deg = degree(prev, vert, next, orientation);
+    if (deg < min_deg) {
+      dame = true;
     }
   }
   return std::tuple <bool, int, cl::Paths>(dame, count, next_waku);
@@ -366,6 +378,18 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
   std::vector<cl::Paths> paths;
   for (const auto& piece : problem) {
     paths.push_back(piece2paths(piece));
+  }
+  for (const auto &path : paths) {
+    auto orientation = cl::Orientation(path.front());
+    for (int i = 0; i < path.front().size(); ++i) {
+      auto prev = path.front()[i - 1];
+      auto vert = path.front()[i % path.size()];
+      auto next = path.front()[(i + 1) % path.size()];
+      auto deg = degree(prev, vert, next, orientation);
+      if (deg < min_deg) {
+        min_deg = deg;
+      }
+    }
   }
   //std::cerr << "paths size : " << paths.size() << std::endl;
   //for (const auto& path : paths) {
