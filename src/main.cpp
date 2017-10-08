@@ -11,8 +11,16 @@
 #include <vector>
 #include <algorithm>
 
+
+std::vector< im::Piece > getShapeHints();
+void QReader(int device_id);
+
 int main() {
 
+    /*
+    QReader(0);
+    exit(1);
+    */
     const std::string imageName = "image";
     const std::string extension = ".bmp";
 
@@ -149,6 +157,141 @@ int main() {
 
     /*----- output answer by GUI -----*/
 
+}
 
+static int offset_id = 1000;
+std::vector< im::Piece > getShapeHints() {
 
+    std::vector< im::Piece > ret;
+    FILE *fp;
+    if((fp = fopen("hint-shape.dat", "r")) != NULL) {
+        int N;
+        while(~fscanf(fp, "%d", &N)) {
+            std::vector< im::Point > points;
+            for(int i = 0; i < N; i++) {
+                int x, y; fscanf(fp, "%d %d", &x, &y);
+                points.push_back(im::Point(x, y));
+            }
+            ret.push_back(im::Piece(offset_id++, {points}));
+        }
+    }
+
+    return ret;
+}
+
+// done!
+void QReader(int device_id){
+
+	// USBカメラを開く
+	cv::VideoCapture cap(device_id);
+
+	// USBカメラが開けていない時は終了
+	if(!cap.isOpened()){
+		std::cerr << "Video device " << device_id << " is not found" << std::endl;
+		exit(1);
+	}
+
+	// USBカメラの解像度の設定
+	cap.set(CV_CAP_PROP_FRAME_WIDTH, 900);
+	cap.set(CV_CAP_PROP_FRAME_HEIGHT, 900);
+
+	cv::namedWindow("QReader", 1);
+
+	for(;;){
+		cv::Mat frame;
+
+		// キャプチャデバイスを開くとストリームみたいに使えるので
+		// Matのインスタンスに突っ込める
+		cap >> frame;
+
+		cv::imshow("QReader", frame);
+
+		int key = cv::waitKey(1);
+
+		// qが押されると無限ループから離脱
+		// wが押されると画像を保存
+		if(key == 119){
+			//result.emplace_back(frame.clone());
+			std::cout << "Saved!" << std::endl;
+
+			cv::imwrite("hint.png", frame.clone());
+			// temp01.datへ文字列書き出し
+			system("zbarimg hint.png > temp01.dat 2>&1");
+
+			char c;
+			std::string info = "";
+			FILE *fp;
+
+			int N;
+			std::vector< std::vector< std::pair< int, int > > > vers;
+
+			// temp01.pngからQRの内容を読む
+			if((fp = fopen("temp01.dat", "r")) != NULL) {
+				while(~fscanf(fp, "%c", &c)) {
+					info += c;
+				}
+				fclose(fp);
+				system("rm temp01.dat");
+
+				info.erase(0, 8);
+                if(info.find("WARNING") != -1) {
+                    printf("QRCode is not detected.\n");
+                    goto next;
+                }
+				if((fp = fopen("temp02.dat", "w")) != NULL) {
+					fprintf(fp, "%s", info.c_str());
+				}
+				fclose(fp);
+
+				std::string val = "";
+				if((fp = fopen("temp02.dat", "r")) != NULL) {
+					fscanf(fp, "%d", &N);
+					vers = std::vector< std::vector< std::pair< int, int > > >(N);
+					for(int i = 0; i < N; i++) {
+						int ver_N;
+						fscanf(fp, ":%d", &ver_N);
+						if(i == 0) val += std::to_string(ver_N);
+						for(int j = 0; j < ver_N; j++) {
+							int x, y; fscanf(fp, "%d %d", &x, &y);
+							vers[i].push_back(std::make_pair(x, y));
+							if(i == 0) val += " " + std::to_string(x) + " " + std::to_string(y);
+						}
+					}
+				}
+				val += '\n';
+				fclose(fp);
+				system("rm temp02.dat");
+
+				bool exist = false;
+				if((fp = fopen("hint-shape.dat", "r")) != NULL) {
+					char s[1000];
+					while(fgets(s, sizeof(s), fp) != NULL) {
+						std::string str = std::string(s);
+						if(str == val) {
+							printf("This hints already exist.\n");
+							exist = true;
+							break;
+						}
+					}
+				}
+				fclose(fp);
+
+				if((fp = fopen("hint-shape.dat", "a")) != NULL && !exist) {
+					for(int i = 0; i < N; i++) {
+						fprintf(fp, "%d", (int)vers[i].size());
+						for(int j = 0; j < vers[i].size(); j++) {
+							fprintf(fp, " %d %d", vers[i][j].first, vers[i][j].second);
+						}
+						fprintf(fp, "\n");
+					}
+				}
+				fclose(fp);
+			}
+		}
+		if(key == 113){
+			break;
+		}
+        next:;
+	}
+	cv::destroyWindow("QReader");
 }
