@@ -355,7 +355,7 @@ public:
   }
 };
 
-std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vector<im::Piece>& problem, const std::vector<im::Answer>& hint)
+std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vector<im::Piece>& problem, const std::vector<im::Hint>& hint)
 {
   const int n = problem.size();
   std::vector<std::multiset<State, MatsuriCompare>> stacks(n + 1);

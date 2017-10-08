@@ -166,7 +166,7 @@ int main()
 
   //gen(problem);
 
-  auto ans = tk::search(waku, problem, std::vector<im::Answer>(), 0);
+  auto ans = tk::search(waku, problem, std::vector<im::Hint>(), 0);
 
   std::cerr << "==============" << std::endl;
   for (int i = 0; i < offsets.size(); ++i) {
