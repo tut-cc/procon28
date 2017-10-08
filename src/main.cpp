@@ -61,9 +61,6 @@ int main() {
 
     cv::threshold(imgs[i], imgs[i], 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
     auto pieceImgs = im::devideImg(imgs[i], coordinats_of_pieces_in_mat[i]);
-    writeIDs(coordinats_of_pieces_in_mat[i], imgs[i], id);
-    cv::resize(imgs[i], imgs[i], cv::Size(), 0.3, 0.3);
-    cv::imshow(std::string("before") + std::to_string(i), imgs[i]);
 
     for (const cv::Mat& piece_img : pieceImgs) {
       cv::Mat dst;
@@ -149,6 +146,11 @@ int main() {
 
   /*----- output answer by GUI -----*/
   im::showAnswer(answers, problem);
+  for (auto i = 0; i < imgs.size(); i++) {
+    writeIDs(coordinats_of_pieces_in_mat[i], imgs[i], id);
+    cv::resize(imgs[i], imgs[i], cv::Size(), 0.3, 0.3);
+    cv::imshow(std::string("before") + std::to_string(i), imgs[i]);
+  }
   cv::waitKey(0);
 }
 
