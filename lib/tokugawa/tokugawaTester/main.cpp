@@ -11,6 +11,8 @@
 
 using namespace ClipperLib;
 
+namespace cl = ClipperLib;
+
 union Color {
   unsigned int raw;
   unsigned char bytes[4];
@@ -22,33 +24,38 @@ cv::Scalar uint2scalar(unsigned int _color)
   std::cerr << (int)color.bytes[0] << " " << (int)color.bytes[1] << " " << (int)color.bytes[2] << " " << (int)color.bytes[3] << std::endl;
   return cv::Scalar(color.bytes[0], color.bytes[1], color.bytes[2], color.bytes[3]);
 }
-
-void DrawPolygons(const Paths& _paths, unsigned int fill_color, unsigned int line_color)
+static void DrawPolygons(const cl::Paths& _paths)
 {
-  cv::Mat img = cv::Mat::zeros(cv::Size(300, 300), CV_8UC4);
-  std::vector<std::vector<cv::Point>> paths;
-  std::vector<int> npts;
-  
+  if (_paths.size() == 0) {
+    std::cerr << "nothing to draw" << std::endl;
+  }
+  cv::Mat img = cv::Mat::zeros(cv::Size(1500, 1200), CV_8UC4);
   img = uint2scalar(0x00FFFFFF);
-  
-  for (const Path& path : _paths) {
-    std::vector<cv::Point> points;
-    for (const IntPoint point : path) {
-      points.push_back(cv::Point(point.X, point.Y));
+  srand((unsigned)time(NULL));
+  for (const auto& _path : _paths) {
+    const cl::Paths one = {_path};
+    std::vector<std::vector<cv::Point>> paths;
+    std::vector<int> npts;
+
+    for (const auto& path : one) {
+      std::vector<cv::Point> points;
+      for (const auto& point : path) {
+        points.push_back(cv::Point(point.X, point.Y));
+      }
+      paths.push_back(points);
+      npts.push_back(points.size());
     }
-    paths.push_back(points);
-    npts.push_back(points.size());
+    std::vector<cv::Point *> raw_paths(paths.size());
+    for (int i = 0; i < paths.size(); ++i) {
+      raw_paths[i] = &paths[i][0];
+    }
+
+//    cv::fillPoly(img, (const cv::Point **) &raw_paths[0], &npts[0], paths.size(), uint2scalar(rand()));
+    cv::polylines(img, (const cv::Point **) &raw_paths[0], &npts[0], paths.size(), true, uint2scalar(rand()));
   }
-  std::vector<cv::Point *> raw_paths(paths.size());
-  for (int i = 0; i < paths.size(); ++i) {
-    raw_paths[i] = &paths[i][0];
-  }
-  
-  cv::fillPoly(img, (const cv::Point **) &raw_paths[0], &npts[0], paths.size(), uint2scalar(fill_color));
-  cv::polylines(img, (const cv::Point **) &raw_paths[0], &npts[0], paths.size(), true, uint2scalar(line_color));
-  
+
   cv::imshow("clipper sample", img);
-  
+
   cv::waitKey(0);
   cv::destroyAllWindows();
 }
@@ -58,22 +65,22 @@ void testclipper()
 	Paths subj(2), clip(1), solution;
 
 	//define outer blue 'subject' polygon
-	subj[0] << 
+	subj[0] <<
 	  IntPoint(180,200) << IntPoint(260,200) <<
 	  IntPoint(260,150) << IntPoint(180,150);
 
 	//define subject's inner triangular 'hole' (with reverse orientation)
-	subj[1] << 
+	subj[1] <<
 	  IntPoint(215,160) << IntPoint(230,190) << IntPoint(200,190);
 
 	//define orange 'clipping' polygon
-	clip[0] << 
-	  IntPoint(190,210) << IntPoint(240,210) << 
+	clip[0] <<
+	  IntPoint(190,210) << IntPoint(240,210) <<
 	  IntPoint(240,130) << IntPoint(190,130);
 
-	//draw input polygons with user-defined routine ... 
-	DrawPolygons(subj, 0x160000FF, 0x600000FF); //blue
-	DrawPolygons(clip, 0x20FFFF00, 0x30FF0000); //orange
+	//draw input polygons with user-defined routine ...
+	//DrawPolygons(subj, 0x160000FF, 0x600000FF); //blue
+	//DrawPolygons(clip, 0x20FFFF00, 0x30FF0000); //orange
 
 	//perform intersection ...
 	Clipper c;
@@ -81,8 +88,8 @@ void testclipper()
 	c.AddPaths(clip, ptClip, true);
 	c.Execute(ctIntersection, solution, pftNonZero, pftNonZero);
 
-	//draw solution with user-defined routine ... 
-	DrawPolygons(solution, 0x3000FF00, 0xFF006600); //solution shaded green
+	//draw solution with user-defined routine ...
+	//DrawPolygons(solution, 0x3000FF00, 0xFF006600); //solution shaded green
 }
 
 void gen(std::vector<im::Piece> problem)
@@ -106,7 +113,7 @@ void gen(std::vector<im::Piece> problem)
     }
   }
 
-  DrawPolygons(sol, 0x3000FF00, 0xFF006600);
+  DrawPolygons(sol);
 }
 
 int main()
@@ -172,6 +179,23 @@ int main()
   for (int i = 0; i < offsets.size(); ++i) {
     std::cerr << "(" << i << ") : " << offsets[i].x << " " << offsets[i].y << std::endl;
   }
+
+  cl::Paths gui;
+  for (int i = 0; i < ans.size(); i++) {
+    cl::Path ps;
+    //for(auto p: problem) {
+
+    if (ans[i].index < 0) continue;
+    for (auto v : problem[i].vertexes[ans[i].index]) {
+      v.x += ans[i].point.x;
+      v.y += ans[i].point.y;
+      ps.push_back(cl::IntPoint(v.x * 6, v.y * 6));
+    }
+    //}
+    gui.push_back(ps);
+
+  }
+  DrawPolygons(gui);
 
   return 0;
 }

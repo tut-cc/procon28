@@ -162,7 +162,7 @@ static void test_degree()
   }
 }
 
-const double EPS = 3;
+const double EPS = 1e-6;
 static double min_deg = 2 * PI;
 
 static auto cut_waku(const cl::Paths& waku, const cl::Path& path)
@@ -183,6 +183,21 @@ static auto cut_waku(const cl::Paths& waku, const cl::Path& path)
     dame |= std::abs(cl::Area(next_waku[1])) > EPS;
     next_waku.erase(next_waku.begin() + 1, next_waku.end());
   }
+
+  cl::Clipper intersecter;
+  intersecter.AddPaths(waku, cl::ptSubject, true);
+  intersecter.AddPath(path, cl::ptClip, true);
+  cl::Paths dst;
+  intersecter.Execute(cl::ctIntersection, dst, cl::pftNonZero, cl::pftNonZero);
+  double trg = 0;
+  for(auto p: dst) {
+    trg += cl::Area(p);
+  }
+  double area = cl::Area(path);
+  if(fabs(area - trg) > 1e-3) {
+    dame |= true;
+  }
+
   // ぴったりハマるところがあればボーナスとしてカウント
   int count = 0;
   bool flag = 0;
@@ -235,7 +250,6 @@ static auto cut_waku(const cl::Paths& waku, const cl::Path& path)
         double deg = degree(path[(i - 1 + m) % m], path[i], path[(i + 1) % m], ori);
         if(fabs(deg - degs[p]) < 1e-3) {
           count++;
-
         }
       }
     }

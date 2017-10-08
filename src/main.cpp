@@ -258,8 +258,20 @@ int main() {
   std::ifstream ifs(path);
 
   im::Piece frame;
+
   int n;
   ifs >> n;
+
+  std::vector<im::Point> wa;
+  int m;
+  ifs >> m;
+  for (int i = 0; i < m; ++i) {
+    int x, y;
+    ifs >> x >> y;
+    wa.push_back(im::Point(x, y));
+  }
+
+  frame = im::Piece(-1, { wa });
   std::vector<im::Piece> problem;
   for (int i = 0; i < n; ++i) {
     int l;
@@ -272,7 +284,7 @@ int main() {
     }
     std::vector< std::vector< im::Point >  > newPoints;
     // auto rolltexes = im::Piece(i, {vec});
-    auto rolltexes = im::hint_roll(i, vec);
+    auto rolltexes = im::easy_roll(i, vec);
     for (const auto& ver : rolltexes.vertexes) {
       int minX = 1000000, maxX = -1;
       for (const auto& p : ver) {
@@ -302,15 +314,7 @@ int main() {
 
     problem.push_back(rolltexes);
   }
-  std::vector<im::Point> wa;
-  int m;
-  ifs >> m;
-  for (int i = 0; i < m; ++i) {
-    int x, y;
-    ifs >> x >> y;
-    wa.push_back(im::Point(x, y));
-  }
-  frame = im::Piece(-1, { wa });
+
   auto answers = tk::search(frame, problem, {}, 0);
 
   cl::Paths gui;
@@ -322,7 +326,7 @@ int main() {
           for(auto v: problem[i].vertexes[answers[i].index]) {
               v.x += answers[i].point.x;
               v.y += answers[i].point.y;
-              ps.push_back(cl::IntPoint(v.x * 6 * 5, v.y * 6 * 5));
+              ps.push_back(cl::IntPoint(v.x * 6, v.y * 6));
           }
       //}
       gui.push_back(ps);
@@ -330,7 +334,7 @@ int main() {
   }
   cl::Path f;
   for( auto p: frame.vertexes.front() ) {
-    f.push_back(cl::IntPoint(p.x * 6 * 5, p.y * 6  *5));
+    f.push_back(cl::IntPoint(p.x * 6, p.y * 6));
   }
   gui.push_back(f);
   DrawPolygons(gui);
