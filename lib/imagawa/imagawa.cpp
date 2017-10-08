@@ -580,7 +580,7 @@ std::vector<im::Point> im::readShape() {
 
 im::Piece im::hint_roll(const int id, const std::vector<im::Pointd>& _shape) {
   im::Piece piece;
-	const double derror = 0.9;
+	const double derror = 0.09;
 
   std::cout << "-----" << std::endl;
   std::vector<im::Pointd> shape(_shape);
