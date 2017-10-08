@@ -541,8 +541,12 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
     DrawPolygons(best_waku, 0x160000FF, 0x600000FF);
     DrawPolygons(best_uni, 0x20FFFF00, 0x30FF0000);
   }
-  for (int i = 0; i < problem.size(); ++i) {
+  for (int i = 0; i < n; ++i) {
     std::cerr << "(" << i << " - " << best_info.indexes[i] << ") [" << (best_info.set[i] ? "x" : " ") << "] : " << best_info.haiti[i].x << " " << best_info.haiti[i].y << std::endl;
   }
-  return std::vector<im::Answer>();
+  std::vector<im::Answer> ans;
+  for (int i = 0; i < n; ++i) {
+    ans.push_back(im::Answer(problem[i].id, best_info.indexes[i], best_info.haiti[i]));
+  }
+  return ans;
 }

@@ -46,6 +46,7 @@ namespace im {
   };
 
   class Answer {
+  public:
     Answer();
     Answer(int id, int index, const im::Point& point);
 
