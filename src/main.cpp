@@ -27,32 +27,35 @@ cv::Scalar uint2scalar(unsigned int _color)
   return cv::Scalar(color.bytes[0], color.bytes[1], color.bytes[2], color.bytes[3]);
 }
 
-static void DrawPolygons(const cl::Paths& _paths, unsigned int fill_color, unsigned int line_color)
+static void DrawPolygons(const cl::Paths& _paths)
 {
   if (_paths.size() == 0) {
     std::cerr << "nothing to draw" << std::endl;
   }
   cv::Mat img = cv::Mat::zeros(cv::Size(1500, 1200), CV_8UC4);
-  std::vector<std::vector<cv::Point>> paths;
-  std::vector<int> npts;
-
   img = uint2scalar(0x00FFFFFF);
+  srand((unsigned)time(NULL));
+  for (const auto& _path : _paths) {
+    const cl::Paths one = {_path};
+    std::vector<std::vector<cv::Point>> paths;
+    std::vector<int> npts;
 
-  for (const auto& path : _paths) {
-    std::vector<cv::Point> points;
-    for (const auto& point : path) {
-      points.push_back(cv::Point(point.X, point.Y));
+    for (const auto& path : one) {
+      std::vector<cv::Point> points;
+      for (const auto& point : path) {
+        points.push_back(cv::Point(point.X, point.Y));
+      }
+      paths.push_back(points);
+      npts.push_back(points.size());
     }
-    paths.push_back(points);
-    npts.push_back(points.size());
-  }
-  std::vector<cv::Point *> raw_paths(paths.size());
-  for (int i = 0; i < paths.size(); ++i) {
-    raw_paths[i] = &paths[i][0];
-  }
+    std::vector<cv::Point *> raw_paths(paths.size());
+    for (int i = 0; i < paths.size(); ++i) {
+      raw_paths[i] = &paths[i][0];
+    }
 
-  cv::fillPoly(img, (const cv::Point **) &raw_paths[0], &npts[0], paths.size(), uint2scalar(fill_color));
-  cv::polylines(img, (const cv::Point **) &raw_paths[0], &npts[0], paths.size(), true, uint2scalar(line_color));
+//    cv::fillPoly(img, (const cv::Point **) &raw_paths[0], &npts[0], paths.size(), uint2scalar(rand()));
+    cv::polylines(img, (const cv::Point **) &raw_paths[0], &npts[0], paths.size(), true, uint2scalar(rand()));
+  }
 
   cv::imshow("clipper sample", img);
 
@@ -240,7 +243,7 @@ int main_using_imagawa() {
     gui.push_back(ps);
 
   }
-  DrawPolygons(gui, 0x160000FF, 0x20FFFF00);
+  DrawPolygons(gui);
 
     return 0;
 
@@ -257,15 +260,6 @@ int main() {
   im::Piece frame;
   int n;
   ifs >> n;
-  std::vector<im::Point> wa;
-  int m;
-  ifs >> m;
-  for (int i = 0; i < m; ++i) {
-    int x, y;
-    ifs >> x >> y;
-    wa.push_back(im::Point(x, y));
-  }
-  frame = im::Piece(-1, { wa });
   std::vector<im::Piece> problem;
   for (int i = 0; i < n; ++i) {
     int l;
@@ -277,7 +271,8 @@ int main() {
       vec.push_back(im::Pointd(x, y));
     }
     std::vector< std::vector< im::Point >  > newPoints;
-    auto rolltexes = im::roll(i, vec);
+    // auto rolltexes = im::Piece(i, {vec});
+    auto rolltexes = im::hint_roll(i, vec);
     for (const auto& ver : rolltexes.vertexes) {
       int minX = 1000000, maxX = -1;
       for (const auto& p : ver) {
@@ -297,9 +292,25 @@ int main() {
       newPoints.push_back(newPoint);
     }
     rolltexes.vertexes.insert(rolltexes.vertexes.end(), newPoints.begin(), newPoints.end());
+  /*  for (auto a : rolltexes.vertexes) {
+      cl::Path p;
+      for (auto b : a) {
+        p << cl::IntPoint(31 + b.x * 31, 31 + b.y * 31);
+      }
+      DrawPolygons({p});
+    } */
+
     problem.push_back(rolltexes);
   }
-
+  std::vector<im::Point> wa;
+  int m;
+  ifs >> m;
+  for (int i = 0; i < m; ++i) {
+    int x, y;
+    ifs >> x >> y;
+    wa.push_back(im::Point(x, y));
+  }
+  frame = im::Piece(-1, { wa });
   auto answers = tk::search(frame, problem, {}, 0);
 
   cl::Paths gui;
@@ -311,13 +322,18 @@ int main() {
           for(auto v: problem[i].vertexes[answers[i].index]) {
               v.x += answers[i].point.x;
               v.y += answers[i].point.y;
-              ps.push_back(cl::IntPoint(v.x * 6, v.y * 6));
+              ps.push_back(cl::IntPoint(v.x * 6 * 5, v.y * 6 * 5));
           }
       //}
       gui.push_back(ps);
 
   }
-  DrawPolygons(gui, 0x160000FF, 0x20FFFF00);
+  cl::Path f;
+  for( auto p: frame.vertexes.front() ) {
+    f.push_back(cl::IntPoint(p.x * 6 * 5, p.y * 6  *5));
+  }
+  gui.push_back(f);
+  DrawPolygons(gui);
 
   return 0;
 }

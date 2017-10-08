@@ -323,7 +323,7 @@ im::Piece im::roll(const int id, const std::vector<im::Pointd>& _shape) {
 
   int len_corn = shape.size(); //角の数
   std::vector<double> len_side(len_corn, 0); //辺の長さ
-  std::vector<im::Point> tmp_res(len_corn, im::Point(0, 0)); 
+  std::vector<im::Point> tmp_res(len_corn, im::Point(0, 0));
   std::vector<std::vector<im::Point>> result;
 
 	int minInx = 0;
@@ -580,14 +580,14 @@ std::vector<im::Point> im::readShape() {
 
 im::Piece im::hint_roll(const int id, const std::vector<im::Pointd>& _shape) {
   im::Piece piece;
-	const double derror = 0.09;
+	const double derror = 1e-3;
 
   std::cout << "-----" << std::endl;
   std::vector<im::Pointd> shape(_shape);
 
   int len_corn = shape.size(); //角の数
   std::vector<double> len_side(len_corn, 0); //辺の長さ
-  std::vector<im::Point> tmp_res(len_corn, im::Point(0, 0)); 
+  std::vector<im::Point> tmp_res(len_corn, im::Point(0, 0));
   std::vector<std::vector<im::Point>> result;
 
 	int minInx = 0;
