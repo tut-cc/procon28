@@ -63,7 +63,7 @@ static void DrawPolygons(const cl::Paths& _paths, unsigned int fill_color, unsig
 std::vector< im::Piece > getShapeHints();
 void QReader(int device_id);
 
-int main() {
+int main_using_imagawa() {
 
 
     //QReader(0);
@@ -242,6 +242,63 @@ int main() {
     }
     DrawPolygons(gui, 0x160000FF, 0x20FFFF00);
 
+}
+
+
+int main() {
+  // load hints
+  std::string path;
+  std::cerr << "ヒントファイルの場所を入力してください : ";
+  std::cin >> path;
+  std::ifstream ifs(path);
+
+  im::Piece frame;
+  int n;
+  ifs >> n;
+  std::vector<im::Point> wa;
+  int m;
+  ifs >> m;
+  for (int i = 0; i < m; ++i) {
+    int x, y;
+    ifs >> x >> y;
+    wa.push_back(im::Point(x, y));
+  }
+  frame = im::Piece(-1, { wa });
+  std::vector<im::Piece> problem;
+  for (int i = 0; i < n; ++i) {
+    int l;
+    ifs >> l;
+    std::vector<im::Pointd> vec;
+    for (int j = 0; j < l; ++j) {
+      int x, y;
+      ifs >> x >> y;
+      vec.push_back(im::Pointd(x, y));
+    }
+    std::vector< std::vector< im::Point >  > newPoints;
+    auto rolltexes = im::roll(i, vec);
+    for (const auto& ver : rolltexes.vertexes) {
+      int minX = 1000000, maxX = -1;
+      for (const auto& p : ver) {
+        maxX = std::max(maxX, p.x);
+        minX = std::min(minX, p.x);
+      }
+
+      std::vector< im::Point > newPoint;
+      int midX = (maxX - minX) / 2;
+      for (const auto& p : ver) {
+        int newX;
+        int dif = abs(p.x - midX);
+        if (p.x > midX)    newX = p.x - dif * 2;
+        else              newX = p.x + dif * 2;
+        newPoint.push_back(im::Point(newX, p.y));
+      }
+      newPoints.push_back(newPoint);
+    }
+    rolltexes.vertexes.insert(rolltexes.vertexes.end(), newPoints.begin(), newPoints.end());
+    problem.push_back(rolltexes);
+  }
+
+  auto answers = tk::search(frame, problem, {}, 0);
 }
 
 static int offset_id = 1000;
