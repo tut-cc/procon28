@@ -458,6 +458,29 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
             auto bornus = std::get<1>(ret_waku) + std::get<1>(ret_uni);
             auto next_waku = std::get<2>(ret_waku);
             auto next_uni = std::get<2>(ret_uni);
+            // check reserved area
+            bool nonon = false;
+            for (const im::Hint& h : hint) {
+              cl::Path path;
+              for (const auto& p : h.vertexes) {
+                path << cl::IntPoint(p.x, p.y);
+              }
+              cl::Clipper clipper;
+              clipper.AddPaths(next_uni, cl::ptSubject, true);
+              clipper.AddPath(path, cl::ptClip, true);
+              cl::Paths dst;
+              clipper.Execute(cl::ctIntersection, dst, cl::pftNonZero, cl::pftNonZero);
+              if (dst.size()) {
+                double area = 0;
+                for (const cl::Path& l : dst) {
+                  area += cl::Area(l);
+                }
+                nonon |= area > 3;
+              }
+            }
+            if (nonon) {
+              continue;
+            }
             auto next_haiti = node.info.haiti;
             next_haiti[j] = im::Point(x, y);
             auto next_indexes = node.info.indexes;
@@ -484,6 +507,32 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
           }
         }
         //std::cerr << "\t\t" << awawa << " transed to next" << std::endl;
+      }
+      // try put hint
+      for (const im::Hint& h : hint) {
+        cl::Path path;
+        for (const auto& p : h.vertexes) {
+          path << cl::IntPoint(p.x, p.y);
+        }
+        bool dame = false;
+        auto ret_waku = cut_waku(node.waku, path);
+        dame |= std::get<0>(ret_waku);
+        auto ret_uni = patch_uni(node.uni, path);
+        dame |= std::get<0>(ret_uni);
+        if (dame) {
+          continue;
+        }
+        auto bornus = std::get<1>(ret_waku) + std::get<1>(ret_uni);
+        auto next_waku = std::get<2>(ret_waku);
+        auto next_uni = std::get<2>(ret_uni);
+        auto next_haiti = node.info.haiti;
+        auto next_indexes = node.info.indexes;
+        Info next_info = node.info;
+        State next(next_waku, next_uni, next_info, node.bornus + bornus, node.edges + path.size());
+        stacks[i + 1].insert(next);
+        if (stacks[i + 1].size() > 100) {
+          stacks[i + 1].erase(stacks[i + 1].begin());
+        }
       }
     }
     if (end) {

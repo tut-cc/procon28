@@ -55,7 +55,7 @@ namespace im {
   };
 
   class Hint {
-    Hint();
+  public:
     Hint(const std::vector<im::Point>& vertexes);
 
     const std::vector<im::Point> vertexes;
