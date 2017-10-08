@@ -11,7 +11,6 @@
 
 #define PI 3.14159265
 #define DP 180/PI
-#define derror 0.5
 
 
 im::Point::Point() : Point(0, 0) {}
@@ -306,9 +305,9 @@ im::Piece im::roll(const int id, const std::vector<im::Pointd>& _shape) {
                                    //double ratio = 55 / (512 * 1.0); //[(mm/pix/mm)]
                                    //double ratio = 1.0; //[(mm/pix/mm)]
 	double derror = 0.5;
-	 if(shape.size()<6){
+	 if(_shape.size()<6){
  	   derror = 0.38;
- 	 }else if(shape.size()<7){
+ 	 }else if(_shape.size()<7){
  	   derror = 0.45;
  	 }else{
  	   derror = 0.48;
@@ -338,7 +337,7 @@ im::Piece im::roll(const int id, const std::vector<im::Pointd>& _shape) {
     //std::cout << "dx:" << dx << std::endl;
     len_side[corn] = sqrt(dx*dx + dy*dy);
 		if(minVal > len_side[corn]){
-			minVal = len_size[corn];
+			minVal = len_side[corn];
 			minInx = corn;
 		}
   }
