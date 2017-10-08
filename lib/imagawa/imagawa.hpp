@@ -69,6 +69,7 @@ namespace im {
   std::vector<Pointd> detectVertexes(const std::vector<cv::Vec4i> &segments);
   Piece roll(const int id, const std::vector<im::Pointd>& _shape);
   Piece hint_roll(const int id, const std::vector<im::Pointd>& _shape);
+  Piece easy_roll(const int id, const std::vector<im::Pointd>& _shape);
   void writeIDs(const std::vector<Point> &ps, cv::Mat &img, int firstID);
   void showAnswer(const std::vector<Answer> &anses, const std::vector<Piece> &pieces);
 
