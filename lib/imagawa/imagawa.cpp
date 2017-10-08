@@ -577,3 +577,138 @@ std::vector<im::Point> im::readShape() {
 
   return verts;
 }
+
+im::Piece im::hint_roll(const int id, const std::vector<im::Pointd>& _shape) {
+  im::Piece piece;
+	const double derror = 0.9;
+
+  std::cout << "-----" << std::endl;
+  std::vector<im::Pointd> shape(_shape);
+
+  int len_corn = shape.size(); //角の数
+  std::vector<double> len_side(len_corn, 0); //辺の長さ
+  std::vector<im::Point> tmp_res(len_corn, im::Point(0, 0)); 
+  std::vector<std::vector<im::Point>> result;
+
+	int minInx = 0;
+	double minVal = 1.0e9;
+  //辺の長さを頂点から取得
+  for (int corn = 0; corn < len_corn; corn++) {
+    double dx = shape[corn].x
+      - shape[(corn < len_corn - 1) ? corn + 1 : 0].x;
+    double dy = shape[corn].y
+      - shape[(corn < len_corn - 1) ? corn + 1 : 0].y;
+    //std::cout << "dx:" << dx << std::endl;
+    len_side[corn] = sqrt(dx*dx + dy*dy);
+		if(minVal > len_side[corn]){
+			minVal = len_side[corn];
+			minInx = corn;
+		}
+  }
+
+  //std::cout << "dy0:" << shape[0].y << "," << shape[1].y << std::endl;
+	//頂点0と頂点1のy,x幅を取得
+  double dy0 = (shape[(minInx<len_corn-1)?minInx+1:0].y - shape[minInx].y);
+  double dx0 = (shape[(minInx<len_corn-1)?minInx+1:0].x - shape[minInx].x);
+  //std::cout << "dy0:" << dy0 << std::endl;
+  double theta0 = 0;
+  //std::cout << "len_side[0]:" << len_side[0] << std::endl;
+	/*
+	・頂点0,1がx軸に平行に並んでいなけらば->y軸に対する辺の角度を計算
+	・頂点0,1がx軸に平行に並んでいれば->角度は0
+	*/
+  if (dy0 != 0) {
+    if (std::abs(dy0) <= len_side[minInx])
+      theta0 = acos(dy0 / len_side[minInx]);
+			//PI超える場合
+			if(dx0 < 0) theta0 += PI;
+    else if (dy0 > 0)
+      theta0 = acos(1);
+    else if (dy0 < 0)
+      theta0 = acos(-1);
+    //std::cout << "theta0:" << theta0 << std::endl;
+    //cout << len_side[0] << endl;
+  }
+  else {
+    theta0 = PI / 4;
+  }
+
+  double theta = 0, dtheta = 0;
+	/*
+	1.最初は頂点0,1をy軸方向に並べる
+	2.頂点1を回転させ、1グリッド分y軸方向の長さを減らす
+	3.90°回転したら終了
+	*/
+  for (double dy = (int)len_side[minInx]; dy <= len_side[minInx] && theta <= PI / 2; dy--) {
+    //(dx!=0) ? theta = asin(dx/len_side[0]) : theta = 0;
+    theta = acos(dy / len_side[minInx]);
+    //std::cout << "theta1:" << theta << std::endl;
+		//初期位置からの回転角度を計算
+    dtheta = theta - theta0;
+    //std::cout << "theta2:" << theta << std::endl;
+    //cout << theta0*DP << ":" << theta*DP << ":" << dtheta*DP << endl;
+    int minX = 1.0e9;
+    int minY = 1.0e9;
+    for (int corn = 0; corn < len_corn; corn++) {
+      //Rotation matrix
+			/*各座標を頂点0を中心とした位置へ移動した後に、
+			  dtheta°だけ回転移動させている
+			*/
+      double y =
+        (shape[corn].y - shape[minInx].y)*cos(dtheta) -
+        (shape[corn].x - shape[minInx].x)*sin(dtheta);
+      double x =
+        (shape[corn].y - shape[minInx].y)*sin(dtheta) +
+        (shape[corn].x - shape[minInx].x)*cos(dtheta);
+      //std::cout << "x1:" << x << std::endl;
+      bool flagx = false;
+      bool flagy = false;
+      //std::cout << x << "," << y << std::endl;
+      if (std::abs(floor(x) - x) < derror) { x = floor(x); flagx = true; }
+      if (std::abs(floor(y) - y) < derror) { y = floor(y); flagy = true; }
+      if (std::abs(ceil(x) - x) < derror) { x = ceil(x); flagx = true; }
+      if (std::abs(ceil(y) - y) < derror) { y = ceil(y); flagy = true; }
+      //std::cout << "x2:" << x << std::endl;
+			/*グリッド上にある座標だけ採用
+			  一つでもエラーがあればその角度は無効
+			*/
+      if (flagx && flagy) {
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        tmp_res[corn] = im::Point(x, y);
+        //std::cout << "res:" << x << "," << y << std::endl;
+      }
+      else break;
+
+			//マイナスの座標を処理
+      if (corn == len_corn - 1) {
+        for (auto &xy : tmp_res) {
+          if (minX < 0) xy.x -= minX;
+          if (minY < 0) xy.y -= minY;
+        }
+        result.push_back(tmp_res);
+        //90°回転x3
+        for (int i = 0; i < 3; i++) {
+          int minX = 1.0e9;
+          int minY = 1.0e9;
+          for (auto &xy : tmp_res) {
+            auto tmpy = xy.y;
+            xy.y = tmpy*cos(PI / 2) - xy.x*sin(PI / 2);
+            xy.x = tmpy*sin(PI / 2) + xy.x*cos(PI / 2);
+            if (xy.x < minX) minX = xy.x;
+            if (xy.y < minY) minY = xy.y;
+          }
+          for (auto &xy : tmp_res) {
+            if (minX < 0) xy.x -= minX;
+            if (minY < 0) xy.y -= minY;
+          }
+          result.push_back(tmp_res);
+        }
+      }
+    }
+  }
+  piece.id = id;
+  piece.vertexes = result;
+
+  return piece;
+}
