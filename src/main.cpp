@@ -242,6 +242,8 @@ int main_using_imagawa() {
     }
     DrawPolygons(gui, 0x160000FF, 0x20FFFF00);
 
+    return 0;
+
 }
 
 
@@ -299,7 +301,28 @@ int main() {
   }
 
   auto answers = tk::search(frame, problem, {}, 0);
+
+  cl::Paths gui;
+  for( int i = 0; i < answers.size(); i++)  {
+      cl::Path ps;
+      //for(auto p: problem) {
+
+          if(answers[i].index < 0) continue;
+          for(auto v: problem[i].vertexes[answers[i].index]) {
+              v.x += answers[i].point.x;
+              v.y += answers[i].point.y;
+              ps.push_back(cl::IntPoint(v.x * 6, v.y * 6));
+          }
+      //}
+      gui.push_back(ps);
+
+  }
+  DrawPolygons(gui, 0x160000FF, 0x20FFFF00);
+
+  return 0;
 }
+
+
 
 static int offset_id = 1000;
 std::vector< im::Piece > getShapeHints() {
