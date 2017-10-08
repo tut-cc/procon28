@@ -26,7 +26,7 @@ int main() {
     */
     int index = 0;
     while(true) {
-        cv::Mat img = cv::imread("/Users/Yuuki/Documents/Programming/procon/procon28/build/src/" + imageName + std::to_string(index++) + extension, cv::IMREAD_GRAYSCALE);
+        cv::Mat img = cv::imread(imageName + std::to_string(index++) + extension, cv::IMREAD_GRAYSCALE);
         if(img.empty()) break;
         else imgs.push_back(img);
     }
