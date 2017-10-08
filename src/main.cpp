@@ -208,6 +208,7 @@ void QReader(int device_id){
 
 				info.erase(0, 8);
                 if(info.find("WARNING") != -1) {
+                    printf("QRCode is not detected.\n");
                     goto next;
                 }
 				if((fp = fopen("temp02.dat", "w")) != NULL) {
