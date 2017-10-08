@@ -11,12 +11,64 @@
 #include <vector>
 #include <algorithm>
 
+#include "polyclipping/clipper.hpp"
+
+namespace cl = ClipperLib;
+
+union Color {
+  unsigned int raw;
+  unsigned char bytes[4];
+};
+
+cv::Scalar uint2scalar(unsigned int _color)
+{
+  Color color = Color{ _color };
+  std::cerr << (int)color.bytes[0] << " " << (int)color.bytes[1] << " " << (int)color.bytes[2] << " " << (int)color.bytes[3] << std::endl;
+  return cv::Scalar(color.bytes[0], color.bytes[1], color.bytes[2], color.bytes[3]);
+}
+
+static void DrawPolygons(const cl::Paths& _paths, unsigned int fill_color, unsigned int line_color)
+{
+  if (_paths.size() == 0) {
+    std::cerr << "nothing to draw" << std::endl;
+  }
+  cv::Mat img = cv::Mat::zeros(cv::Size(1500, 1200), CV_8UC4);
+  std::vector<std::vector<cv::Point>> paths;
+  std::vector<int> npts;
+
+  img = uint2scalar(0x00FFFFFF);
+
+  for (const auto& path : _paths) {
+    std::vector<cv::Point> points;
+    for (const auto& point : path) {
+      points.push_back(cv::Point(point.X, point.Y));
+    }
+    paths.push_back(points);
+    npts.push_back(points.size());
+  }
+  std::vector<cv::Point *> raw_paths(paths.size());
+  for (int i = 0; i < paths.size(); ++i) {
+    raw_paths[i] = &paths[i][0];
+  }
+
+  cv::fillPoly(img, (const cv::Point **) &raw_paths[0], &npts[0], paths.size(), uint2scalar(fill_color));
+  cv::polylines(img, (const cv::Point **) &raw_paths[0], &npts[0], paths.size(), true, uint2scalar(line_color));
+
+  cv::imshow("clipper sample", img);
+
+  cv::waitKey(0);
+  cv::destroyAllWindows();
+}
 
 std::vector< im::Piece > getShapeHints();
 void QReader(int device_id);
 
-void using_imagawa()
-{
+int main_using_imagawa() {
+
+
+  //QReader(0);
+  //exit(1);
+
   const std::string imageName = "image";
   const std::string extension = ".bmp";
 
@@ -25,8 +77,8 @@ void using_imagawa()
 
   /*
   var index
-  - 0     : frame image
-  - non 0 : piece images
+      - 0     : frame image
+      - non 0 : piece images
   */
   int index = 0;
   while (true) {
@@ -34,6 +86,26 @@ void using_imagawa()
     if (img.empty()) break;
     else imgs.push_back(img);
   }
+
+  /*FILE *fp;
+  if((fp = fopen("/Users/Yuuki/Documents/Programming/procon/procon28/build/hint-shape.dat", "r")) != NULL) {
+      int n;
+      printf("aaa");
+      while(~fscanf(fp, "%d", &n)) {
+          std::vector< cl::IntPoint > p;
+          std::cout << n << std::endl;
+          for(int i = 0; i < n; i++) {
+              int x, y; fscanf(fp, "%d %d", &x, &y);
+               p.push_back(cl::IntPoint(x, y));
+          }
+          cl::Paths paths;
+          paths.push_back(p);
+          DrawPolygons(paths,  0x160000FF, 0x600000FF);
+      }
+  } */
+
+
+
 
   // test
   //for(int i = 0; i < imgs.size(); i++) {
@@ -49,7 +121,7 @@ void using_imagawa()
   std::vector< im::Piece > problem;
 
   std::vector<std::vector<im::Point>> coordinats_of_pieces_in_mat(imgs.size());
-  int id = 0;
+  int id = 1;
   for (int i = 0; i < imgs.size(); i++) {
     if (i == 0) {
       auto cutImg = imgs[i](cv::Rect(20, 20, imgs[i].cols - 40, imgs[i].rows - 40)).clone();
@@ -60,11 +132,21 @@ void using_imagawa()
     auto pieceImgs = im::devideImg(imgs[i], coordinats_of_pieces_in_mat[i]);
 
     for (const cv::Mat& piece_img : pieceImgs) {
+      std::cout << id << ":";
+      int color_i = 0;
       cv::Mat dst;
       cv::Canny(piece_img, dst, 50, 200, 3);
       const auto& segments = im::detectSegments(dst);
       const auto& vertexes = im::detectVertexes(segments);
-      auto rolltexes = im::roll(id, vertexes);
+      // std::cout << segments.size() << ":" << vertexes.size() << std::endl;
+      auto rolltexes = im::roll(id, vertexes); // <-これが1ピース当たりの回転を含めた座標を返します
+      /*std::cout << rolltexes.id << "-----" << std::endl;
+      for (const auto &rolling : rolltexes.vertexes) {
+        std::cout << "=====" << std::endl;
+        for (const auto &segment : rolling) {
+          std::cout << ">> " << segment.x << "," << segment.y << std::endl;
+        }
+    } */
 
       if (i == 0) {
         int mpos = -1;
@@ -114,18 +196,18 @@ void using_imagawa()
     cv::cvtColor(pieceImg, pieceImg, CV_GRAY2BGR);
     for (auto &segment : segments) {
 
-    //端点表示
-    //cv::circle(pieceImg, cv::Point(segment[0], segment[1]), 5, cv::Scalar(255, 255, 255), -1, 8, 0);
-    //cv::circle(pieceImg, cv::Point(segment[2], segment[3]), 5, cv::Scalar(255, 255, 255), -1, 8, 0);
+        //端点表示
+        //cv::circle(pieceImg, cv::Point(segment[0], segment[1]), 5, cv::Scalar(255, 255, 255), -1, 8, 0);
+        //cv::circle(pieceImg, cv::Point(segment[2], segment[3]), 5, cv::Scalar(255, 255, 255), -1, 8, 0);
 
-    cv::line(pieceImg, cv::Point(segment[0], segment[1]),
-    cv::Point(segment[2], segment[3]), cv::Scalar(color_i, color_i, 255), 2, 8);
+        cv::line(pieceImg, cv::Point(segment[0], segment[1]),
+        cv::Point(segment[2], segment[3]), cv::Scalar(color_i, color_i, 255), 2, 8);
     }
 
     for (auto &vertex : vertexes) {
-    if (vertex.x == -1) continue;
-    cv::circle(pieceImg, cv::Point(vertex.x, vertex.y), 5, cv::Scalar(color_i, 255, color_i), -1, 8, 0);
-    color_i += 20;
+      if (vertex.x == -1) continue;
+      cv::circle(pieceImg, cv::Point(vertex.x, vertex.y), 5, cv::Scalar(color_i, 255, color_i), -1, 8, 0);
+      color_i += 20;
     }
 
     cv::resize(pieceImg, pieceImg, cv::Size(), 0.5, 0.5);
@@ -141,22 +223,31 @@ void using_imagawa()
   // type vector< im::Answer > answers
   auto answers = tk::search(frame, problem, {}, 0);
 
+
   /*----- output answer by GUI -----*/
-  im::showAnswer(answers, problem);
-  for (auto i = 0; i < imgs.size(); i++) {
-    writeIDs(coordinats_of_pieces_in_mat[i], imgs[i], id);
-    cv::resize(imgs[i], imgs[i], cv::Size(), 0.3, 0.3);
-    cv::imshow(std::string("before") + std::to_string(i), imgs[i]);
+  cl::Paths gui;
+  for (int i = 0; i < answers.size(); i++) {
+    cl::Path ps;
+    //for(auto p: problem) {
+
+    if (answers[i].index < 0) continue;
+    for (auto v : problem[i].vertexes[answers[i].index]) {
+      v.x += answers[i].point.x;
+      v.y += answers[i].point.y;
+      ps.push_back(cl::IntPoint(v.x * 6, v.y * 6));
+    }
+    //}
+    gui.push_back(ps);
+
   }
-  cv::waitKey(0);
+  DrawPolygons(gui, 0x160000FF, 0x20FFFF00);
+
+    return 0;
+
 }
 
-int main() {
-  /*
-  QReader(0);
-  exit(1);
-  */
 
+int main() {
   // load hints
   std::string path;
   std::cerr << "ヒントファイルの場所を入力してください : ";
@@ -185,12 +276,53 @@ int main() {
       ifs >> x >> y;
       vec.push_back(im::Pointd(x, y));
     }
-    auto ret = im::roll(i, vec);
-    problem.push_back(ret);
+    std::vector< std::vector< im::Point >  > newPoints;
+    auto rolltexes = im::roll(i, vec);
+    for (const auto& ver : rolltexes.vertexes) {
+      int minX = 1000000, maxX = -1;
+      for (const auto& p : ver) {
+        maxX = std::max(maxX, p.x);
+        minX = std::min(minX, p.x);
+      }
+
+      std::vector< im::Point > newPoint;
+      int midX = (maxX - minX) / 2;
+      for (const auto& p : ver) {
+        int newX;
+        int dif = abs(p.x - midX);
+        if (p.x > midX)    newX = p.x - dif * 2;
+        else              newX = p.x + dif * 2;
+        newPoint.push_back(im::Point(newX, p.y));
+      }
+      newPoints.push_back(newPoint);
+    }
+    rolltexes.vertexes.insert(rolltexes.vertexes.end(), newPoints.begin(), newPoints.end());
+    problem.push_back(rolltexes);
   }
 
   auto answers = tk::search(frame, problem, {}, 0);
+
+  cl::Paths gui;
+  for( int i = 0; i < answers.size(); i++)  {
+      cl::Path ps;
+      //for(auto p: problem) {
+
+          if(answers[i].index < 0) continue;
+          for(auto v: problem[i].vertexes[answers[i].index]) {
+              v.x += answers[i].point.x;
+              v.y += answers[i].point.y;
+              ps.push_back(cl::IntPoint(v.x * 6, v.y * 6));
+          }
+      //}
+      gui.push_back(ps);
+
+  }
+  DrawPolygons(gui, 0x160000FF, 0x20FFFF00);
+
+  return 0;
 }
+
+
 
 static int offset_id = 1000;
 std::vector< im::Piece > getShapeHints() {
