@@ -180,13 +180,14 @@ int main() {
   for (int i = 0; i < n; ++i) {
     int l;
     ifs >> l;
-    std::vector<im::Point> vec;
+    std::vector<im::Pointd> vec;
     for (int j = 0; j < l; ++j) {
       int x, y;
       ifs >> x >> y;
-      vec.push_back(im::Point(x, y));
+      vec.push_back(im::Pointd(x, y));
     }
-    problem.push_back(im::Piece(i, { vec }));
+    auto ret = im::roll(i, vec);
+    problem.push_back(ret);
   }
 
   auto answers = tk::search(frame, problem, {}, 0);
