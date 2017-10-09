@@ -735,7 +735,7 @@ im::Piece im::easy_roll(const int id, const std::vector<im::Pointd>& _shape) {
 			int minY = 1.0e9;
 			for (auto &xy : tmp_res) {
 				auto tmpy = xy.y;
-				xy.y = -1*xy.x*sin(PI / 2);
+				xy.y = -1*xy.x;
 				xy.x = tmpy;
 				if (xy.x < minX) minX = xy.x;
 				if (xy.y < minY) minY = xy.y;
