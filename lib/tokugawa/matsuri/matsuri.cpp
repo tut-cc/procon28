@@ -29,11 +29,12 @@ struct State {
   Info info;
   int bornus;
   int edges;
+  double area;
 
   State(const cl::Paths& waku, const cl::Paths& uni = cl::Paths(), const Info& info = Info(),
-    int bornus = 0, int edges = 0)
+    int bornus = 0, int edges = 0, double area = 0)
     : waku(waku), uni(uni), info(info),
-    bornus(bornus), edges(edges) {}
+    bornus(bornus), edges(edges), area(area) {}
 };
 
 static auto piece2paths(const im::Piece& piece)
@@ -123,15 +124,18 @@ public:
         return vs.edges - vs.uni.front().size() < atom.edges - atom.uni.front().size();
       }
     }
+    if (vs.area != atom.area) {
+      return vs.area < atom.area;
+    }
     if (vs.waku.front().size() != atom.waku.front().size()) {
       return vs.waku.front().size() < atom.waku.front().size();
     }
     // 角度の分散が小さい方を優先
-    const auto ta = cal_togari(atom);
-    const auto tb = cal_togari(vs);
-    if (ta != tb) {
-      return tb < ta;
-    }
+    //const auto ta = cal_togari(atom);
+    //const auto tb = cal_togari(vs);
+    //if (ta != tb) {
+    //  return tb < ta;
+    //}
     return false;
   }
 };
@@ -165,6 +169,27 @@ static void test_degree()
 const double EPS = 1e-6;
 static double min_deg = 2 * PI;
 
+class PathCompare {
+public:
+  bool operator()(const cl::Path &left, const cl::Path &right) const {
+    if (left.size() != right.size()) {
+      return left.size() < right.size();
+    }
+    const int n = left.size();
+    for (int i = 0; i < n; ++i) {
+      if (left[i].X != right[i].X) {
+        return left[i].X < right[i].X;
+      }
+      if (left[i].Y != right[i].Y) {
+        return left[i].Y < right[i].Y;
+      }
+    }
+    return false;
+  }
+};
+
+std::map<cl::Path, std::vector<double>, PathCompare> memo_degree;
+
 static auto cut_waku(const cl::Paths& waku, const cl::Path& path)
 {
   // waku から path を削り取る
@@ -190,11 +215,11 @@ static auto cut_waku(const cl::Paths& waku, const cl::Path& path)
   cl::Paths dst;
   intersecter.Execute(cl::ctIntersection, dst, cl::pftNonZero, cl::pftNonZero);
   double trg = 0;
-  for(auto p: dst) {
+  for (auto p : dst) {
     trg += cl::Area(p);
   }
   double area = cl::Area(path);
-  if(fabs(area - trg) > 1e-3) {
+  if (fabs(area - trg) > 1e-3) {
     dame |= true;
   }
 
@@ -234,21 +259,30 @@ static auto cut_waku(const cl::Paths& waku, const cl::Path& path)
     }
   }
 
-  if(waku.size()) {
+  if (waku.size()) {
     std::map< std::pair< int, int >, double > degs;
     bool ori = cl::Orientation(waku.front());
     auto v = waku.front();
     int n = v.size();
-    for(int i = 0; i < v.size(); i++) {
+    for (int i = 0; i < v.size(); i++) {
       degs[std::make_pair(v[i].X, v[i].Y)] = degree(v[(i - 1 + n) % n], v[i], v[(i + 1) % n], ori);
     }
-    int m = path.size();
-    ori = cl::Orientation(path);
-    for(int i = 0; i < m; i++) {
-      auto p = std::make_pair(path[i].X, path[i].Y);
-      if(degs.count(p)) {
+    if (!memo_degree.count(path)) {
+      std::vector<double> memo;
+      int m = path.size();
+      ori = cl::Orientation(path);
+      for (int i = 0; i < m; i++) {
         double deg = degree(path[(i - 1 + m) % m], path[i], path[(i + 1) % m], ori);
-        if(fabs(deg - degs[p]) < 1e-3) {
+        memo.push_back(deg);
+      }
+      memo_degree[path] = memo;
+    }
+    int m = path.size();
+    for (int i = 0; i < m; i++) {
+      auto p = std::make_pair(path[i].X, path[i].Y);
+      if (degs.count(p)) {
+        auto deg = memo_degree[path][i];
+        if (fabs(deg - degs[p]) < 1e-3) {
           count++;
         }
       }
@@ -557,7 +591,11 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
             auto next_indexes = node.info.indexes;
             next_indexes[j] = k;
             Info next_info(next_set, next_haiti, next_indexes);
-            State next(next_waku, next_uni, next_info, node.bornus + bornus, node.edges + path.size());
+            double area = 0;
+            if (next_waku.size()) {
+              cl::Area(next_waku.front());
+            }
+            State next(next_waku, next_uni, next_info, node.bornus + bornus, node.edges + path.size(), area);
             if (done.count(next_haiti) > 0) {
               continue;
             }
