@@ -189,6 +189,7 @@ public:
 };
 
 std::map<cl::Path, std::vector<double>, PathCompare> memo_degree;
+std::map<cl::Path, std::set<std::vector<std::pair<cl::cInt, cl::cInt>>>, PathCompare> memo_line;
 
 static auto cut_waku(const cl::Paths& waku, const cl::Path& path)
 {
@@ -225,22 +226,25 @@ static auto cut_waku(const cl::Paths& waku, const cl::Path& path)
 
   // ぴったりハマるところがあればボーナスとしてカウント
   int count = 0;
-  bool flag = 0;
   if (waku.size()) {
-    std::set<std::vector<std::pair<cl::cInt, cl::cInt>>> set;
-    for (int i = 0; i < path.size(); ++i) {
-      auto left = path[i];
-      auto right = path[(i + 1) % path.size()];
-      auto lp = std::make_pair(left.X, left.Y);
-      auto rp = std::make_pair(right.X, right.Y);
-      if (lp > rp) {
-        std::swap(lp, rp);
+    if (!memo_line.count(path)) {
+      std::set<std::vector<std::pair<cl::cInt, cl::cInt>>> set;
+      for (int i = 0; i < path.size(); ++i) {
+        auto left = path[i];
+        auto right = path[(i + 1) % path.size()];
+        auto lp = std::make_pair(left.X, left.Y);
+        auto rp = std::make_pair(right.X, right.Y);
+        if (lp > rp) {
+          std::swap(lp, rp);
+        }
+        std::vector<std::pair<cl::cInt, cl::cInt>> vec;
+        vec.push_back(lp);
+        vec.push_back(rp);
+        set.insert(vec);
       }
-      std::vector<std::pair<cl::cInt, cl::cInt>> vec(2);
-      vec.push_back(lp);
-      vec.push_back(rp);
-      set.insert(vec);
+      memo_line[path] = set;
     }
+    const auto& set = memo_line[path];
     for (int i = 0; i < waku.front().size(); ++i) {
       auto left = waku.front()[i];
       auto right = waku.front()[(i + 1) % waku.front().size()];
@@ -249,12 +253,11 @@ static auto cut_waku(const cl::Paths& waku, const cl::Path& path)
       if (lp > rp) {
         std::swap(lp, rp);
       }
-      std::vector<std::pair<cl::cInt, cl::cInt>> vec(2);
+      std::vector<std::pair<cl::cInt, cl::cInt>> vec;
       vec.push_back(lp);
       vec.push_back(rp);
       if (set.count(vec)) {
         ++count;
-        flag = 1;
       }
     }
   }
