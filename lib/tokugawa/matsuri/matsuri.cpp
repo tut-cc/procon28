@@ -452,9 +452,6 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
   bool end = false;
   for (int g = 0;; ++g) {
     std::cerr << "---- " << g << " GENERATION ----" << std::endl;
-    if (g) {
-      break;
-    }
     for (int i = 0; i <= n; ++i) {
       if (stacks[i].size() == 0) {
         continue;
