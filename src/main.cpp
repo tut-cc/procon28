@@ -59,6 +59,7 @@ static void DrawPolygons(const cl::Paths& _paths, bool fill = false)
   }
 
   cv::imshow("clipper sample", img);
+  cv::imwrite("drawn.bmp", img);
 
   cv::waitKey(0);
   cv::destroyAllWindows();
