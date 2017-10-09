@@ -27,7 +27,7 @@ cv::Scalar uint2scalar(unsigned int _color)
   return cv::Scalar(color.bytes[0], color.bytes[1], color.bytes[2], color.bytes[3]);
 }
 
-static void DrawPolygons(const cl::Paths& _paths)
+static void DrawPolygons(const cl::Paths& _paths, bool fill = false)
 {
   if (_paths.size() == 0) {
     std::cerr << "nothing to draw" << std::endl;
@@ -53,11 +53,13 @@ static void DrawPolygons(const cl::Paths& _paths)
       raw_paths[i] = &paths[i][0];
     }
 
-//    cv::fillPoly(img, (const cv::Point **) &raw_paths[0], &npts[0], paths.size(), uint2scalar(rand()));
+    if (fill)
+      cv::fillPoly(img, (const cv::Point **) &raw_paths[0], &npts[0], paths.size(), uint2scalar(rand()));
     cv::polylines(img, (const cv::Point **) &raw_paths[0], &npts[0], paths.size(), true, uint2scalar(rand()));
   }
 
   cv::imshow("clipper sample", img);
+  cv::imwrite("drawn.bmp", img);
 
   cv::waitKey(0);
   cv::destroyAllWindows();
@@ -276,42 +278,15 @@ int main() {
   for (int i = 0; i < n; ++i) {
     int l;
     ifs >> l;
-    std::vector<im::Pointd> vec;
+    std::vector<im::Point> vec;
     for (int j = 0; j < l; ++j) {
       int x, y;
       ifs >> x >> y;
-      vec.push_back(im::Pointd(x, y));
+      vec.push_back(im::Point(x, y));
     }
     std::vector< std::vector< im::Point >  > newPoints;
     // auto rolltexes = im::Piece(i, {vec});
     auto rolltexes = im::easy_roll(i, vec);
-    for (const auto& ver : rolltexes.vertexes) {
-      int minX = 1000000, maxX = -1;
-      for (const auto& p : ver) {
-        maxX = std::max(maxX, p.x);
-        minX = std::min(minX, p.x);
-      }
-
-      std::vector< im::Point > newPoint;
-      int midX = (maxX - minX) / 2;
-      for (const auto& p : ver) {
-        int newX;
-        int dif = abs(p.x - midX);
-        if (p.x > midX)    newX = p.x - dif * 2;
-        else              newX = p.x + dif * 2;
-        newPoint.push_back(im::Point(newX, p.y));
-      }
-      newPoints.push_back(newPoint);
-    }
-    rolltexes.vertexes.insert(rolltexes.vertexes.end(), newPoints.begin(), newPoints.end());
-  /*  for (auto a : rolltexes.vertexes) {
-      cl::Path p;
-      for (auto b : a) {
-        p << cl::IntPoint(31 + b.x * 31, 31 + b.y * 31);
-      }
-      DrawPolygons({p});
-    } */
-
     problem.push_back(rolltexes);
   }
 
@@ -332,12 +307,12 @@ int main() {
       gui.push_back(ps);
 
   }
-  cl::Path f;
-  for( auto p: frame.vertexes.front() ) {
-    f.push_back(cl::IntPoint(p.x * 6, p.y * 6));
-  }
-  gui.push_back(f);
-  DrawPolygons(gui);
+  //cl::Path f;
+  //for( auto p: frame.vertexes.front() ) {
+  //  f.push_back(cl::IntPoint(p.x * 6, p.y * 6));
+  //}
+  //gui.push_back(f);
+  DrawPolygons(gui, true);
 
   return 0;
 }

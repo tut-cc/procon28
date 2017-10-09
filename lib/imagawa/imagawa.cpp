@@ -711,18 +711,22 @@ im::Piece im::hint_roll(const int id, const std::vector<im::Pointd>& _shape) {
 	return piece;
 }
 
-im::Piece im::easy_roll(const int id, const std::vector<im::Pointd>& _shape) {
+im::Piece im::easy_roll(const int id, const std::vector<im::Point>& _shape) {
 	im::Piece piece;
-	std::vector<im::Pointd> shape(_shape);
+	std::vector<im::Point> shape(_shape);
 
 	int len_corn = shape.size(); //角の数
 	std::vector<im::Point> tmp_res; 
 	std::vector<std::vector<im::Point>> result;
 
-	for(int j=1;j>0;j*=-1){
+	for(int i=0; i < 2; i++){
+    int j = 1;
+    if (i) {
+      j *= -1;
+    }
 		int minX = 1.0e9;
 		for(auto &xy:shape){
-			tmp_res.push_back(im::Point((int)j*xy.x, (int)xy.y));
+			tmp_res.push_back(im::Point(j*xy.x, xy.y));
 			if(minX > j*xy.x) minX = j*xy.x;
 		}
 		for (auto &xy : tmp_res) {
