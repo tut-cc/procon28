@@ -255,13 +255,13 @@ static auto cut_waku(const cl::Paths& waku, const cl::Path& path)
     }
   }
   // ピースの最小角よりも小さな角ができたらdameフラグを立てる
-  const auto& _path = waku.front();
+  const auto& _path = next_waku.front();
   const int n = _path.size();
+  auto orientation = cl::Orientation(_path);
   for (int i = 0; i < n; ++i) {
     auto prev = _path[(i - 1 + n) % n];
     auto vert = _path[i];
     auto next = _path[(i + 1) % n];
-    auto orientation = cl::Orientation(_path);
     auto deg = degree(prev, vert, next, orientation);
     if (deg < min_deg) {
       dame = true;
@@ -359,6 +359,37 @@ static void DrawPolygons(const cl::Paths& _paths, unsigned int fill_color, unsig
   cv::destroyAllWindows();
 }
 
+static void save(const std::string& name, const cl::Paths& _paths, unsigned int fill_color, unsigned int line_color)
+{
+  if (_paths.size() == 0) {
+    std::cerr << "nothing to draw" << std::endl;
+  }
+  cv::Mat img = cv::Mat::zeros(cv::Size(1200, 900), CV_8UC4);
+  std::vector<std::vector<cv::Point>> paths;
+  std::vector<int> npts;
+
+  img = uint2scalar(0x00FFFFFF);
+
+  for (const auto& path : _paths) {
+    std::vector<cv::Point> points;
+    for (const auto& point : path) {
+      points.push_back(cv::Point(point.X * 7, point.Y * 7));
+    }
+    paths.push_back(points);
+    npts.push_back(points.size());
+  }
+  std::vector<cv::Point *> raw_paths(paths.size());
+  for (int i = 0; i < paths.size(); ++i) {
+    raw_paths[i] = &paths[i][0];
+  }
+
+  cv::fillPoly(img, (const cv::Point **) &raw_paths[0], &npts[0], paths.size(), uint2scalar(fill_color));
+  cv::polylines(img, (const cv::Point **) &raw_paths[0], &npts[0], paths.size(), true, uint2scalar(line_color));
+
+  cv::imwrite(name, img);
+}
+
+
 class PointVecCompare {
 public:
   bool operator()(const std::vector<im::Point> &left, const std::vector<im::Point> &right) const {
@@ -400,11 +431,16 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
       min_deg = std::min(min_deg, deg);
     }
   }
+  std::cerr << "min_deg : " << min_deg << std::endl;
   //std::cerr << "paths size : " << paths.size() << std::endl;
+  //int num = 0;
   //for (const auto& path : paths) {
+  //  int cnt = 0;
   //  for (const auto& aaa : path) {
-  //    DrawPolygons({ aaa }, 114514, 8931919);
+  //    save("info/" + std::to_string(num) + "-" + std::to_string(cnt) + ".bmp",{ aaa }, 114514, 8931919);
+  //    ++cnt;
   //  }
+  //  ++num;
   //}
   double best_score = 1 << 28;
   Info best_info;
@@ -415,9 +451,6 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
   done.insert(atom.info.haiti);
   bool end = false;
   for (int g = 0;; ++g) {
-    if(g == 1) {
-      break;
-    }
     std::cerr << "---- " << g << " GENERATION ----" << std::endl;
     for (int i = 0; i <= n; ++i) {
       if (stacks[i].size() == 0) {
@@ -578,6 +611,21 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
     }
     DrawPolygons(best_waku, 0x160000FF, 0x600000FF);
     DrawPolygons(best_uni, 0x20FFFF00, 0x30FF0000);
+
+    const auto& _path = best_waku.front();
+    const int n = _path.size();
+    auto orientation = cl::Orientation(_path);
+    std::cerr << "====================" << std::endl;
+    for (int i = 0; i < n; ++i) {
+      auto prev = _path[(i - 1 + n) % n];
+      auto vert = _path[i];
+      auto next = _path[(i + 1) % n];
+      auto deg = degree(prev, vert, next, orientation);
+      std::cerr << (deg * 180 / PI) << std::endl;
+      if (deg < min_deg) {
+        std::cerr << "herererere" << std::endl;
+      }
+    }
   }
   for (int i = 0; i < n; ++i) {
     std::cerr << "(" << i << " - " << best_info.indexes[i] << ") [" << (best_info.set[i] ? "x" : " ") << "] : " << best_info.haiti[i].x << " " << best_info.haiti[i].y << std::endl;
