@@ -287,33 +287,6 @@ int main() {
     std::vector< std::vector< im::Point >  > newPoints;
     // auto rolltexes = im::Piece(i, {vec});
     auto rolltexes = im::easy_roll(i, vec);
-    for (const auto& ver : rolltexes.vertexes) {
-      int minX = 1000000, maxX = -1;
-      for (const auto& p : ver) {
-        maxX = std::max(maxX, p.x);
-        minX = std::min(minX, p.x);
-      }
-
-      std::vector< im::Point > newPoint;
-      int midX = (maxX - minX) / 2;
-      for (const auto& p : ver) {
-        int newX;
-        int dif = abs(p.x - midX);
-        if (p.x > midX)    newX = p.x - dif * 2;
-        else              newX = p.x + dif * 2;
-        newPoint.push_back(im::Point(newX, p.y));
-      }
-      newPoints.push_back(newPoint);
-    }
-    rolltexes.vertexes.insert(rolltexes.vertexes.end(), newPoints.begin(), newPoints.end());
-  /*  for (auto a : rolltexes.vertexes) {
-      cl::Path p;
-      for (auto b : a) {
-        p << cl::IntPoint(31 + b.x * 31, 31 + b.y * 31);
-      }
-      DrawPolygons({p});
-    } */
-
     problem.push_back(rolltexes);
   }
 
