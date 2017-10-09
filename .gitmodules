@@ -1,0 +1,4 @@
+[submodule "lib/clipper"]
+	path = lib/clipper
+	url = ../procon28.git
+	branch = lib/Clipper
