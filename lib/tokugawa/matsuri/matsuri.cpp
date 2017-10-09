@@ -396,6 +396,65 @@ static void DrawPolygons(const cl::Paths& _paths, unsigned int fill_color, unsig
   cv::destroyAllWindows();
 }
 
+static void DrawPolygons2(const cl::Paths& _paths, bool fill = false)
+{
+  if (_paths.size() == 0) {
+    std::cerr << "nothing to draw" << std::endl;
+  }
+  cv::Mat img = cv::Mat::zeros(cv::Size(1500, 1200), CV_8UC4);
+  img = uint2scalar(0x00FFFFFF);
+  srand((unsigned)time(NULL));
+  for (const auto& _path : _paths) {
+    const cl::Paths one = { _path };
+    std::vector<std::vector<cv::Point>> paths;
+    std::vector<int> npts;
+
+    for (const auto& path : one) {
+      std::vector<cv::Point> points;
+      for (const auto& point : path) {
+        points.push_back(cv::Point(point.X, point.Y));
+      }
+      paths.push_back(points);
+      npts.push_back(points.size());
+    }
+    std::vector<cv::Point *> raw_paths(paths.size());
+    for (int i = 0; i < paths.size(); ++i) {
+      raw_paths[i] = &paths[i][0];
+    }
+
+    if (fill)
+      cv::fillPoly(img, (const cv::Point **) &raw_paths[0], &npts[0], paths.size(), uint2scalar(rand()));
+    cv::polylines(img, (const cv::Point **) &raw_paths[0], &npts[0], paths.size(), true, uint2scalar(rand()));
+  }
+
+  cv::imshow("clipper sample", img);
+  cv::imwrite("drawn.bmp", img);
+
+  cv::waitKey(0);
+  cv::destroyAllWindows();
+}
+
+void draw(const std::vector<im::Piece>& problem, const Info& info)
+{
+  /*----- output answer by GUI -----*/
+  cl::Paths gui;
+  for (int i = 0; i < problem.size(); i++) {
+    cl::Path ps;
+    //for(auto p: problem) {
+
+    if (info.indexes[i] < 0) continue;
+    for (auto v : problem[i].vertexes[info.indexes[i]]) {
+      v.x += info.haiti[i].x;
+      v.y += info.haiti[i].y;
+      ps.push_back(cl::IntPoint(v.x * 6, v.y * 6));
+    }
+    //}
+    gui.push_back(ps);
+
+  }
+  DrawPolygons2(gui, true);
+}
+
 static void save(const std::string& name, const cl::Paths& _paths, unsigned int fill_color, unsigned int line_color)
 {
   if (_paths.size() == 0) {
@@ -483,17 +542,23 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
   Info best_info;
   cl::Paths best_waku;
   cl::Paths best_uni;
+  int bornus;
   int count = 0;
   std::set<std::vector<im::Point>, PointVecCompare> done;
   done.insert(atom.info.haiti);
   bool end = false;
   for (int g = 0;; ++g) {
     std::cerr << "---- " << g << " GENERATION ----" << std::endl;
+    bornus = -1;
     for (int i = 0; i <= n; ++i) {
       if (stacks[i].size() == 0) {
         continue;
       }
       State node = *stacks[i].rbegin();
+      if (node.bornus == bornus) {
+        break;
+      }
+      bornus = node.bornus;
       const int uni_size = node.uni.size() == 0 ? 0 : node.uni.front().size();
       const double waku_area = node.waku.size() == 0 ? 0 : std::abs(cl::Area(node.waku.front()));
       std::cerr << "[" << i << "] : " << node.bornus << ", " << node.edges << " - " << uni_size
