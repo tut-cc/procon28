@@ -27,7 +27,7 @@ cv::Scalar uint2scalar(unsigned int _color)
   return cv::Scalar(color.bytes[0], color.bytes[1], color.bytes[2], color.bytes[3]);
 }
 
-static void DrawPolygons(const cl::Paths& _paths)
+static void DrawPolygons(const cl::Paths& _paths, bool fill = false)
 {
   if (_paths.size() == 0) {
     std::cerr << "nothing to draw" << std::endl;
@@ -53,7 +53,8 @@ static void DrawPolygons(const cl::Paths& _paths)
       raw_paths[i] = &paths[i][0];
     }
 
-//    cv::fillPoly(img, (const cv::Point **) &raw_paths[0], &npts[0], paths.size(), uint2scalar(rand()));
+    if (fill)
+      cv::fillPoly(img, (const cv::Point **) &raw_paths[0], &npts[0], paths.size(), uint2scalar(rand()));
     cv::polylines(img, (const cv::Point **) &raw_paths[0], &npts[0], paths.size(), true, uint2scalar(rand()));
   }
 
@@ -276,11 +277,11 @@ int main() {
   for (int i = 0; i < n; ++i) {
     int l;
     ifs >> l;
-    std::vector<im::Pointd> vec;
+    std::vector<im::Point> vec;
     for (int j = 0; j < l; ++j) {
       int x, y;
       ifs >> x >> y;
-      vec.push_back(im::Pointd(x, y));
+      vec.push_back(im::Point(x, y));
     }
     std::vector< std::vector< im::Point >  > newPoints;
     // auto rolltexes = im::Piece(i, {vec});
@@ -332,12 +333,12 @@ int main() {
       gui.push_back(ps);
 
   }
-  cl::Path f;
-  for( auto p: frame.vertexes.front() ) {
-    f.push_back(cl::IntPoint(p.x * 6, p.y * 6));
-  }
-  gui.push_back(f);
-  DrawPolygons(gui);
+  //cl::Path f;
+  //for( auto p: frame.vertexes.front() ) {
+  //  f.push_back(cl::IntPoint(p.x * 6, p.y * 6));
+  //}
+  //gui.push_back(f);
+  DrawPolygons(gui, true);
 
   return 0;
 }

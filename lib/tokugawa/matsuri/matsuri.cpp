@@ -331,7 +331,7 @@ static void DrawPolygons(const cl::Paths& _paths, unsigned int fill_color, unsig
   if (_paths.size() == 0) {
     std::cerr << "nothing to draw" << std::endl;
   }
-  cv::Mat img = cv::Mat::zeros(cv::Size(300, 300), CV_8UC4);
+  cv::Mat img = cv::Mat::zeros(cv::Size(1200, 900), CV_8UC4);
   std::vector<std::vector<cv::Point>> paths;
   std::vector<int> npts;
 
@@ -340,7 +340,7 @@ static void DrawPolygons(const cl::Paths& _paths, unsigned int fill_color, unsig
   for (const auto& path : _paths) {
     std::vector<cv::Point> points;
     for (const auto& point : path) {
-      points.push_back(cv::Point(point.X, point.Y));
+      points.push_back(cv::Point(point.X * 7, point.Y * 7));
     }
     paths.push_back(points);
     npts.push_back(points.size());
@@ -452,6 +452,9 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
   bool end = false;
   for (int g = 0;; ++g) {
     std::cerr << "---- " << g << " GENERATION ----" << std::endl;
+    if (g) {
+      break;
+    }
     for (int i = 0; i <= n; ++i) {
       if (stacks[i].size() == 0) {
         continue;
