@@ -5,6 +5,11 @@
 #include <cmath>
 #include <fstream>
 #include <map>
+#include <iostream>
+#include <string>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/opencv.hpp>
 
 
 const int MAX_NUM_OF_PEICES = 50;
@@ -13,6 +18,11 @@ const int YOKO = 101;
 const double PI = 4 * std::atan(1);
 
 namespace cl = ClipperLib;
+
+
+
+static cv::Scalar uint2scalar(unsigned int _color);
+static void DrawPolygons(const cl::Paths& _paths, unsigned int fill_color, unsigned int line_color);
 
 struct Info {
   std::bitset<MAX_NUM_OF_PEICES> set;
@@ -124,9 +134,9 @@ public:
         return vs.edges - vs.uni.front().size() < atom.edges - atom.uni.front().size();
       }
     }
-    if (vs.area != atom.area) {
+    /*if (vs.area != atom.area) {
       return vs.area < atom.area;
-    }
+    }*/
     if (vs.waku.front().size() != atom.waku.front().size()) {
       return vs.waku.front().size() < atom.waku.front().size();
     }
@@ -140,8 +150,7 @@ public:
   }
 };
 
-#include <iostream>
-#include <string>
+
 static void test_degree()
 {
   cl::Paths test(1);
@@ -200,10 +209,20 @@ static auto cut_waku(const cl::Paths& waku, const cl::Path& path)
   clipper.Execute(cl::ctDifference, next_waku, cl::pftNonZero, cl::pftNonZero);
   // 穴が空いたり、2つ以上に分割したりしたらdameフラグを立てる
   bool dame = false;
+
+  auto gui = std::vector< cl::Path > ({path});
+  DrawPolygons(gui, 0x20FFFF00, 0x30FF0000);
+
   if (next_waku.size() > 1) {
     std::sort(next_waku.begin(), next_waku.end(), [](const auto& l, const auto& r) {
       return std::abs(cl::Area(l)) > std::abs(cl::Area(r));
     });
+
+    /*for( auto &p : next_waku ) {
+      cl::Paths printed = std::vector< cl::Path >({p});
+      DrawPolygons(printed, 0x20FFFF00, 0x30FF0000);
+    }*/
+
     // 誤差を考え、面積x以下は許容する。
     dame |= std::abs(cl::Area(next_waku[1])) > EPS;
     next_waku.erase(next_waku.begin() + 1, next_waku.end());
@@ -223,82 +242,86 @@ static auto cut_waku(const cl::Paths& waku, const cl::Path& path)
     dame |= true;
   }
 
-  // ぴったりハマるところがあればボーナスとしてカウント
-  int count = 0;
   bool flag = 0;
-  if (waku.size()) {
-    std::set<std::vector<std::pair<cl::cInt, cl::cInt>>> set;
-    for (int i = 0; i < path.size(); ++i) {
-      auto left = path[i];
-      auto right = path[(i + 1) % path.size()];
-      auto lp = std::make_pair(left.X, left.Y);
-      auto rp = std::make_pair(right.X, right.Y);
-      if (lp > rp) {
-        std::swap(lp, rp);
+  int count = 0;
+  if(!dame) {
+    if (waku.size()) {
+      std::map< std::pair< int, int >, double > degs;
+      bool ori = cl::Orientation(waku.front());
+      auto v = waku.front();
+      int n = v.size();
+      for (int i = 0; i < v.size(); i++) {
+        degs[std::make_pair(v[i].X, v[i].Y)] = degree(v[(i - 1 + n) % n], v[i], v[(i + 1) % n], ori);
       }
-      std::vector<std::pair<cl::cInt, cl::cInt>> vec(2);
-      vec.push_back(lp);
-      vec.push_back(rp);
-      set.insert(vec);
-    }
-    for (int i = 0; i < waku.front().size(); ++i) {
-      auto left = waku.front()[i];
-      auto right = waku.front()[(i + 1) % waku.front().size()];
-      auto lp = std::make_pair(left.X, left.Y);
-      auto rp = std::make_pair(right.X, right.Y);
-      if (lp > rp) {
-        std::swap(lp, rp);
+      if (!memo_degree.count(path)) {
+        std::vector<double> memo;
+        int m = path.size();
+        ori = cl::Orientation(path);
+        for (int i = 0; i < m; i++) {
+          double deg = degree(path[(i - 1 + m) % m], path[i], path[(i + 1) % m], ori);
+          memo.push_back(deg);
+        }
+        memo_degree[path] = memo;
       }
-      std::vector<std::pair<cl::cInt, cl::cInt>> vec(2);
-      vec.push_back(lp);
-      vec.push_back(rp);
-      if (set.count(vec)) {
-        ++count;
-        flag = 1;
-      }
-    }
-  }
-
-  if (waku.size()) {
-    std::map< std::pair< int, int >, double > degs;
-    bool ori = cl::Orientation(waku.front());
-    auto v = waku.front();
-    int n = v.size();
-    for (int i = 0; i < v.size(); i++) {
-      degs[std::make_pair(v[i].X, v[i].Y)] = degree(v[(i - 1 + n) % n], v[i], v[(i + 1) % n], ori);
-    }
-    if (!memo_degree.count(path)) {
-      std::vector<double> memo;
       int m = path.size();
-      ori = cl::Orientation(path);
       for (int i = 0; i < m; i++) {
-        double deg = degree(path[(i - 1 + m) % m], path[i], path[(i + 1) % m], ori);
-        memo.push_back(deg);
-      }
-      memo_degree[path] = memo;
-    }
-    int m = path.size();
-    for (int i = 0; i < m; i++) {
-      auto p = std::make_pair(path[i].X, path[i].Y);
-      if (degs.count(p)) {
-        auto deg = memo_degree[path][i];
-        if (fabs(deg - degs[p]) < 1e-3) {
-          count++;
+        auto p = std::make_pair(path[i].X, path[i].Y);
+        if (degs.count(p)) {
+          auto deg = memo_degree[path][i];
+          if (fabs(deg - degs[p]) < 1e-3) {
+            //count += 1;
+          }
         }
       }
     }
-  }
-  // ピースの最小角よりも小さな角ができたらdameフラグを立てる
-  const auto& _path = next_waku.front();
-  const int n = _path.size();
-  auto orientation = cl::Orientation(_path);
-  for (int i = 0; i < n; ++i) {
-    auto prev = _path[(i - 1 + n) % n];
-    auto vert = _path[i];
-    auto next = _path[(i + 1) % n];
-    auto deg = degree(prev, vert, next, orientation);
-    if (deg < min_deg) {
-      dame = true;
+
+    // ぴったりハマるところがあればボーナスとしてカウン
+    if (waku.size()) {
+      std::set<std::vector<std::pair<cl::cInt, cl::cInt>>> set;
+      for (int i = 0; i < path.size(); ++i) {
+        auto left = path[i];
+        auto right = path[(i + 1) % path.size()];
+        auto lp = std::make_pair(left.X, left.Y);
+        auto rp = std::make_pair(right.X, right.Y);
+        if (lp > rp) {
+          std::swap(lp, rp);
+        }
+        std::vector<std::pair<cl::cInt, cl::cInt>> vec(2);
+        vec.push_back(lp);
+        vec.push_back(rp);
+        set.insert(vec);
+      }
+      for (int i = 0; i < waku.front().size(); ++i) {
+        auto left = waku.front()[i];
+        auto right = waku.front()[(i + 1) % waku.front().size()];
+        auto lp = std::make_pair(left.X, left.Y);
+        auto rp = std::make_pair(right.X, right.Y);
+        if (lp > rp) {
+          std::swap(lp, rp);
+        }
+        std::vector<std::pair<cl::cInt, cl::cInt>> vec(2);
+        vec.push_back(lp);
+        vec.push_back(rp);
+        if (set.count(vec)) {
+        /*  if(flag) count += 10;
+          else count -= 100;*/
+          count += 2;
+        }
+      }
+    }
+
+    // ピースの最小角よりも小さな角ができたらdameフラグを立てる
+    const auto& _path = next_waku.front();
+    const int n = _path.size();
+    auto orientation = cl::Orientation(_path);
+    for (int i = 0; i < n; ++i) {
+      auto prev = _path[(i - 1 + n) % n];
+      auto vert = _path[i];
+      auto next = _path[(i + 1) % n];
+      auto deg = degree(prev, vert, next, orientation);
+      if (deg < min_deg) {
+        dame = true;
+      }
     }
   }
   return std::tuple <bool, int, cl::Paths>(dame, count, next_waku);
@@ -345,9 +368,7 @@ static auto patch_uni(const cl::Paths& uni, const cl::Path& path)
   return std::tuple<bool, int, cl::Paths>(dame, 0, next_uni);
 }
 
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/opencv.hpp>
+
 
 union Color {
   unsigned int raw;
@@ -503,11 +524,11 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
         best_uni = node.uni;
         ++count;
         std::cerr << "(" << count << ") best score is renewed! : " << best_score << " at " << i << std::endl;
-        if (count % 10 == 0 || i == n) {
-          //DrawPolygons(node.waku, 0x160000FF, 0x600000FF); //blue
+        ///if (count % 10 == 0 || i == n) {
+          DrawPolygons(node.waku, 0x160000FF, 0x600000FF); //blue
           //DrawPolygons(node.uni, 0x20FFFF00, 0x30FF0000); //orange
-        }
-        if (score < 1e-6) {
+        //}
+        if (score < 1e-3) {
           end = true;
         }
       }
@@ -647,10 +668,10 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
     if (end) {
       break;
     }
-    DrawPolygons(best_waku, 0x160000FF, 0x600000FF);
-    DrawPolygons(best_uni, 0x20FFFF00, 0x30FF0000);
+    //DrawPolygons(best_waku, 0x160000FF, 0x600000FF);
+    //DrawPolygons(best_uni, 0x20FFFF00, 0x30FF0000);
 
-    const auto& _path = best_waku.front();
+    /*const auto& _path = best_waku.front();
     const int n = _path.size();
     auto orientation = cl::Orientation(_path);
     std::cerr << "====================" << std::endl;
@@ -663,7 +684,7 @@ std::vector<im::Answer> tk::matsuri_search(const im::Piece& waku, const std::vec
       if (deg < min_deg) {
         std::cerr << "herererere" << std::endl;
       }
-    }
+    } */
   }
   for (int i = 0; i < n; ++i) {
     std::cerr << "(" << i << " - " << best_info.indexes[i] << ") [" << (best_info.set[i] ? "x" : " ") << "] : " << best_info.haiti[i].x << " " << best_info.haiti[i].y << std::endl;
