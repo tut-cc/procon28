@@ -716,16 +716,16 @@ im::Piece im::easy_roll(const int id, const std::vector<im::Point>& _shape) {
 	std::vector<im::Point> shape(_shape);
 
 	int len_corn = shape.size(); //角の数
-	std::vector<im::Point> tmp_res; 
 	std::vector<std::vector<im::Point>> result;
 
 	for(int i=0; i < 2; i++){
+    std::vector<im::Point> tmp_res;
     int j = 1;
     if (i) {
       j *= -1;
     }
 		int minX = 1.0e9;
-		for(auto &xy:shape){
+		for(auto &xy: shape){
 			tmp_res.push_back(im::Point(j*xy.x, xy.y));
 			if(minX > j*xy.x) minX = j*xy.x;
 		}
