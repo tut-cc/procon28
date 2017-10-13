@@ -715,7 +715,6 @@ im::Piece im::easy_roll(const int id, const std::vector<im::Point>& _shape) {
 	im::Piece piece;
 	std::vector<im::Point> shape(_shape);
 
-	int len_corn = shape.size(); //角の数
 	std::vector<std::vector<im::Point>> result;
 
 	for(int i=0; i < 2; i++){
@@ -724,29 +723,32 @@ im::Piece im::easy_roll(const int id, const std::vector<im::Point>& _shape) {
     if (i) {
       j *= -1;
     }
-		int minX = 1.0e9;
+		int minX = 1e9;
+    int minY = 1e9;
 		for(auto &xy: shape){
 			tmp_res.push_back(im::Point(j*xy.x, xy.y));
-			if(minX > j*xy.x) minX = j*xy.x;
+			minX = std::min(minX, j * xy.x);
+      minY = std::min(minY, xy.y);
 		}
 		for (auto &xy : tmp_res) {
-			if(minX < 0) xy.x -= minX;
+			xy.x -= minX;
+      xy.y -= minY;
 		}
 		result.push_back(tmp_res);
 		//90°回転x3
-		for (int i = 0; i < 3; i++) {
-			int minX = 1.0e9;
-			int minY = 1.0e9;
+		for (int k = 0; k < 3; k++) {
+			int minX = 1e9;
+			int minY = 1e9;
 			for (auto &xy : tmp_res) {
 				auto tmpy = xy.y;
-				xy.y = -1*xy.x;
-				xy.x = tmpy;
-				if (xy.x < minX) minX = xy.x;
-				if (xy.y < minY) minY = xy.y;
+				xy.y = xy.x;
+				xy.x = -tmpy;
+				minX = std::min(minX, xy.x);
+				minY = std::min(minY, xy.y);
 			}
 			for (auto &xy : tmp_res) {
-				if (minX < 0) xy.x -= minX;
-				if (minY < 0) xy.y -= minY;
+				xy.x -= minX;
+				xy.y -= minY;
 			}
 			result.push_back(tmp_res);
 		}
